@@ -1,0 +1,248 @@
+@import url('base.css');
+
+/* Fix scroll to the tab-pane */
+.main-container, 
+.main, .tabs, 
+.tabs-content {
+    overflow: hidden;
+}
+
+/* === TABS === */
+.tabs {
+    width: 100%;
+    max-width: 800px;
+    height: 80%;
+    margin: 1%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 2px 2px 10px #999;
+    border-radius: 10px;
+}
+
+/* === TAB BUTTONS === */
+
+.tabs-buttons {
+    display: grid; 
+    grid-auto-flow: column;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.tab-btn {
+    display: flex;
+    background-color: #ddd;
+    border: none;
+    font-size: 1.4rem;
+    font-weight: bold;
+    padding: 12px 18px;
+    text-wrap: nowrap;
+    color: #666; 
+}
+.tab-btn:hover {
+    background-color: #ccc; 
+}
+
+.tab-btn.active {
+    background-color: white;
+    color: #015287;
+    padding-top: 7px;
+    border-top: 5px solid #015287;
+}
+
+/* === TAB PANES === */
+.tabs-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-grow: 1;
+    padding: 4%;
+    gap: 10px;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: min-content;
+    gap: 20px;
+    padding: 3%;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.tabs label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.tabs input,
+.tabs select {
+    display: flex;
+    padding: 8px 10px;
+}
+
+.tabs h2  {
+    font-size: 1.2rem;
+}
+
+.tabs-controller {
+    display: flex;
+    justify-content: space-between;
+}
+
+.tabs-content button {
+    display: none;
+}
+
+.tabs-content button.active {
+    display: flex;
+    padding: 8px 10px;
+    font-size: 1.2rem;
+}
+
+.tabs-controller i {
+    font-size: 1.4rem;
+}
+
+#btn-submit {
+    gap: 10px;
+}
+
+.btn-add-contact {
+    width: max-content;
+    gap: 10px;
+}
+
+.contact-information {
+    grid-column: 1/-1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.contact-item-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.contact-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    font-size: 1.2rem;
+}
+
+.select-contact-type {
+    background-color: #EFEFEF;
+}
+
+.contact-item label { 
+    width: auto;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 5px; 
+    flex-shrink: 1;
+}
+ 
+.contact-item 
+.input-contact-notes { 
+    width: 100%;
+}
+ 
+
+#injury-pane.tab-pane.active {
+    display: flex;
+    flex-direction: column;
+}
+
+.btn-add-injury {
+    width: max-content;
+    display: flex;
+    gap: 10px;
+}
+
+.injury-item-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.injury-item {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.injury-item .select-label {
+    display: flex;
+    flex-grow: 1;
+}
+
+.injury-item .date-label {
+    font-size: 1.1rem;
+}
+
+.injury-item .btn-delete-self {
+    margin-top: 22px;
+    aspect-ratio: 1/1;
+}
+
+.injury-item:first-child
+.btn-delete-self.active {
+    color: inherit;
+    background-color: inherit;
+    color: transparent;
+    border: none;
+}
+
+.error-msg {
+    display: none;
+}
+
+.error-msg.active {
+    display: block;
+    grid-column: 1/-1;
+    color: red;
+    
+}
+
+.combo-list {
+    border:1px solid #ccc; 
+    display: none; 
+    max-height:100px; 
+    overflow:auto;
+}
+
+.combo-list li {
+    padding: 8px 10px;
+}
+
+div.ts-control {
+    margin: 0;
+    padding: 10px 10px;
+    font-size: 1.2rem;
+    border: 1px solid #767676;
+}
+
+select * {
+    font-size: 1.2rem;
+}
+
+.tabs .ts-wrapper.single .ts-control input {
+    font-size: 1.2rem;
+}
+
+.ts-wrapper .single {
+    font-size: 1.2rem;
+}
+
+.tabs .ts-dropdown [data-selectable].option {
+    padding: 10px 10px;
+}

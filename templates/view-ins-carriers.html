@@ -1,0 +1,33 @@
+{% extends "view-elements.html" %}
+
+{% block name %}
+Insurance Carrier
+{% endblock name %}
+
+{% block columns %}
+<tr> 
+    <th>ID</th>
+    <th>Company Name</th> 
+    <th>Address</th>
+</tr>
+{% endblock columns %}
+
+{% block rows %}
+{% for ins_carrier in ins_carriers %}
+<tr class="table-row">
+    <td data-field="id">{{ ins_carrier.id }}</td>
+    <td data-field="name">{{ ins_carrier.name }} </td> 
+    <td data-field="address">{{ ins_carrier.address }} </td>
+</tr>
+{% endfor %}
+{% endblock rows %}
+
+{% block form %} 
+<input type="hidden" name="id" >
+<label> Company name:
+    <input type="text" name="name">
+</label> 
+<label> Address: 
+    <input type="text" name="address">
+</label>
+{% endblock form %}

@@ -1,0 +1,28 @@
+{% extends "view-elements.html" %}
+
+{% block name %}
+Def. Attorney
+{% endblock name %}
+
+{% block columns %}
+<tr> 
+    <th>ID</th> 
+    <th>Attorney Name</th>
+</tr>
+{% endblock columns %}
+
+{% block rows %}
+{% for def_attorney in def_attorneys %}
+<tr class="table-row">
+    <td data-field="id">{{ def_attorney.id }}</td> 
+    <td data-field="name">{{ def_attorney.name }}</td> 
+</tr>
+{% endfor %}
+{% endblock rows %}
+
+{% block form %} 
+<input type="hidden" name="id" >
+<label> Name:
+    <input type="text" name="name">
+</label> 
+{% endblock form %}

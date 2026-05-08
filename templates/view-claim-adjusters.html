@@ -1,0 +1,28 @@
+{% extends "view-elements.html" %}
+
+{% block name %}
+Claim Adjuster
+{% endblock name %}
+
+{% block columns %}
+<tr> 
+    <th>ID</th> 
+    <th>Adjuster Name</th>
+</tr>
+{% endblock columns %}
+
+{% block rows %}
+{% for claim_adjuster in claim_adjusters %}
+<tr class="table-row">
+    <td data-field="id">{{ claim_adjuster.id }}</td> 
+    <td data-field="name">{{ claim_adjuster.name }}</td> 
+</tr>
+{% endfor %}
+{% endblock rows %}
+
+{% block form %} 
+<input type="hidden" name="id" >
+<label> Name:
+    <input type="text" name="name">
+</label> 
+{% endblock form %}

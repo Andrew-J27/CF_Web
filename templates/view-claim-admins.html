@@ -1,0 +1,33 @@
+{% extends "view-elements.html" %}
+
+{% block name %}
+Claim Admin
+{% endblock name %}
+
+{% block columns %}
+<tr> 
+    <th>ID</th>
+    <th>Company Name</th> 
+    <th>Address</th>
+</tr>
+{% endblock columns %}
+
+{% block rows %}
+{% for claim_admin in claim_admins %}
+<tr class="table-row">
+    <td data-field="id">{{ claim_admin.id }}</td>
+    <td data-field="name">{{ claim_admin.name }} </td> 
+    <td data-field="address">{{ claim_admin.address }} </td>
+</tr>
+{% endfor %}
+{% endblock rows %}
+
+{% block form %} 
+<input type="hidden" name="id" >
+<label> Company name:
+    <input type="text" name="name">
+</label> 
+<label> Address: 
+    <input type="text" name="address">
+</label>
+{% endblock form %}

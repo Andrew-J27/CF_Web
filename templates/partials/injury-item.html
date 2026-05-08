@@ -1,0 +1,35 @@
+<div class="injury-item">
+    <input class="input-injury-id" type="hidden" name="injury-id" value="{{injury.id}}">
+    <label class="date-label"> Date:
+        <input type="date" name="injury-date" value="{{injury.date|date:"Y-m-d"}}" class="input-injury-date"> 
+    </label>
+    
+    <label class="select-label"> Body Part:
+        <select name="injury-body-part" value="{{injury.body_part.id}}" class="select-injury-body-part">
+            {% for part in body_parts %}
+            <option value="{{part.id}}"
+                {% if injury.body_part and part.id == injury.body_part.id %}selected{% endif %}>
+                {{part.name}}
+            </option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <label class="select-label"> Lesion Type:
+        <select name="injury-type" value="{{injury.injury_type.id}}" class="select-injury-type">
+            <option value=""></option>
+            {% for type in injury_types %}
+            <option value="{{type.id}}"
+            {% if injury.injury_type and type.id == injury.injury_type.id %}selected{% endif %}>
+                {{type.name}}
+
+            </option>
+            {% endfor %}
+        </select>
+    </label>
+    
+
+    <button class="btn-delete-self active" type="button">
+        <i class="fi fi-sr-trash-xmark"></i>
+    </button>
+</div>

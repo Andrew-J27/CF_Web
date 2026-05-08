@@ -1,0 +1,43 @@
+{% extends "view-elements.html" %}
+
+{% block name %}
+client
+{% endblock name %}
+
+{% block columns %}
+<tr> 
+    <th>ID</th>
+    <th>Full Name</th>
+    <th>SSN</th>
+    <th>Birth Date</th>
+    <th>Address</th>
+</tr>
+{% endblock columns %}
+
+{% block rows %}
+{% for client in clients %}
+<tr class="table-row">
+    <td data-field="id">{{ client.id }}</td>
+    <td data-field="name">{{ client.name }} </td>
+    <td data-field="ssn">{{ client.ssn }} </td>
+    <td data-field="birth_date">{{client.birth_date|date:"Y-m-d"}} </td>
+    <td data-field="address">{{ client.address }} </td>
+</tr>
+{% endfor %}
+{% endblock rows %}
+
+{% block form %} 
+<input type="hidden" name="id" >
+<label> Full name:
+    <input type="text" name="name">
+</label>
+<label> SSN:
+    <input type="text" name="ssn">
+</label>
+<label> Birth date:
+    <input type="date" name="birth_date">
+</label>
+<label> Address: 
+    <input type="text" name="address">
+</label>
+{% endblock form %}

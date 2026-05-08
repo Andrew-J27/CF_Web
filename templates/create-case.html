@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block link %}
+<link rel="stylesheet" href=' {% static "css/create-case.css" %} '>
+<link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+
+<script type="module" src="{% static 'js/create.js' %}" defer> </script>
+<script type="module" src="{% static 'js/tabs.js'%}" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+{% endblock link %}
+
+{% block main %}
+<div class="tabs">
+    <div class="tabs-buttons">
+        <button class="tab-btn active" data-tab="1">Client</button>
+        <button class="tab-btn" data-tab="2">Case info.</button>
+        <button class="tab-btn" data-tab="3">Injuries</button>
+        <button class="tab-btn" data-tab="4">Employer</button>
+        <button class="tab-btn" data-tab="5">Ins. Carrier</button>
+        <button class="tab-btn" data-tab="6">Defense side</button> 
+        <button class="tab-btn" data-tab="7">Claim Admin.</button>
+    </div>
+    <form action="" class="form tabs-content" method="POST">
+        {% csrf_token %}
+        <div class="tab-pane active" data-tab="1">
+            <input type="hidden" name="client-name" value="">
+
+            <label> Full Name:
+                <select id="select-client" name="client">
+                {% for c in clients %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+                </select> 
+            </label>
+
+            <!--
+                <label> Full Name:
+                    <input type="text" name="client-name" value="" required>
+                </label>
+            -->
+            <label>Address:
+                <input type="text" name="client-address" required>
+            </label>
+            <label> Social Sec. Number:
+                <input type="text" name="client-ssn" required>
+            </label>
+            <label> Date of birth:
+                <input type="date" name="client-birth" required>
+            </label>
+
+            <span class="error-msg" id="client-error-msg">
+                Missing data of client
+            </span>
+
+            <div class="contact-information">
+                <h2> Contact Information: </h2>
+                <div class="contact-item-container" data-name="client">
+                    {% for item in client_contacts %}
+                        {% include "partials/contact-item.html" %}
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn-add-contact active">
+                    <i class="fi fi-br-plus"></i>
+                    Add contact
+                </button>
+            </div>
+        </div>
+        <div class="tab-pane" data-tab="2">
+            <label for="select-case-status-id">Case Status:
+                <select name="case-status" id="select-case-status-id" required>
+                    {% for status in case_statuses %}
+                    <option value="{{status.id}}">{{status.name}}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <span></span>
+            <label for="select-attorney-id">Attorney Handling:
+                <select name="attorney-id" id="select-attorney-id" required {% if user_role == 'attorney' %} disabled {% endif %}>
+                    {% for attorney in attorneys %}
+                    <option value="{{attorney.id}}" {% if user_role == 'attorney' and system_user.id == attorney.id %} selected {% endif %} >{{attorney.name}}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label for="select-assistant-id">Assistant Handling:
+                <select name="assistant-id" id="select-assistant-id" required {% if user_role == 'assistant' %} disabled {% endif %}> 
+                    {% for assistant in assistants %}
+                    <option value="{{assistant.id}}" {% if user_role == 'assistant' and system_user.id == assistant.id %} selected {% endif %} >{{assistant.name}}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label> Adjudication N°:
+                <input type="text" name="case-adj-num">
+            </label>
+            <label>Adjudication date:
+                <input type="date" name="case-adj-date">
+            </label>
+
+            <label> Claim N°:
+                <input type="text" name="case-claim-num">
+            </label>
+            <label for="input-case-claim-status"> Claim status:
+                <select name="case-claim-status" id="input-case-claim-status">
+                    <option value="accepted">Accepted</option>
+                    <option value="delayed">Delayed</option>
+                    <option value="denied">Denied</option>
+                </select>
+            </label>
+
+            <label>Settlement date:
+                <input type="date" name="case-settlement-date">
+            </label>
+            <span class="error-msg"></span>
+        </div>
+
+        <div class="tab-pane" data-tab="3" id="injury-pane">
+            <div class="injury-item-container">
+                {% include "partials/injury-item.html" %}  
+            </div>
+
+            <button class="btn-add-injury active" type="button">
+                <i class="fi fi-br-plus"></i>
+                Add injury
+            </button>
+            <span class="error-msg"></span>
+        </div>
+
+        <div class="tab-pane" data-tab="4">
+            <input type="hidden" name="employer-name">
+            <label>Name:
+                <select id="select-employer" name="employer">
+                {% for emp in employers %}
+                    <option value="{{ emp.id }}">{{ emp.name }}</option>
+                {% endfor %}
+                </select> 
+            </label>
+            <label>Address:
+                <input type="text" name="employer-address">
+            </label>
+        </div>
+
+        <div class="tab-pane" data-tab="5">
+            <input type="hidden" name="ins-carrier-name">
+            <label>Company Name:
+                <select id="select-ins-carrier" name="ins-carrier">
+                {% for c in ins_carriers %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+                </select> 
+            </label>
+            <label>Address:
+                <input type="text" name="ins-carrier-address">
+            </label>
+        </div>
+
+        <div class="tab-pane" data-tab="6">
+            <input type="hidden" name="def-lawfirm-name">
+            <label>Law Firm Name:
+                <select id="select-def-lawfirm" name="def-lawfirm">
+                {% for law_firm in def_lawfirms %}
+                    <option value="{{ law_firm.id }}">{{ law_firm.name }}</option>
+                {% endfor %}
+                </select>
+            </label>
+            <label>Address:
+                <input type="text" name="law-firm-address">
+            </label>
+            <span></span>
+
+            <input type="hidden" name="def-att-name">
+            <label> D. Attorney:
+                <select id="select-def-att" name="def-att">
+                {% for att in def_atts %}
+                    <option value="{{ att.id }}">{{ att.name }}</option>
+                {% endfor %}
+                </select>
+            </label>
+            <span></span>
+
+            <input type="hidden" name="def-asst-name">
+            <label>D. Assistant: 
+                <select id="select-def-asst" name="def-asst">
+                {% for asst in def_assts %}
+                    <option value="{{ asst.id }}">{{ asst.name }}</option>
+                {% endfor %}
+                </select>
+            </label>
+            <span class="error-msg"></span> 
+
+            <div class="contact-information">
+                <h2>Assistant Contact Information: </h2>
+                <div class="contact-item-container" data-name="def-asst"></div>
+                <button type="button" class="btn-add-contact active">
+                    <i class="fi fi-br-plus"></i>
+                    Add contact
+                </button>
+            </div>  
+        </div>
+
+        <div class="tab-pane" data-tab="7">
+            <input type="hidden" name="claim-admin-name">
+            <label>Claim Administrator:
+                <select id="select-claim-admin" name="claim-admin">
+                {% for c in claim_admins %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+                </select> 
+            </label>
+            <label>Address:
+                <input type="text" name="claim-admin-address">
+            </label>
+            <input type="hidden" name="claim-adj-name">
+            <label> Claim Adj. Name:
+                <select id="select-claim-adj" name="claim-adj">
+                {% for adj in claim_adjs %}
+                    <option value="{{ adj.id }}">{{ adj.name }}</option>
+                {% endfor %}
+                </select>
+            </label>
+            <span></span>
+            <div class="contact-information">
+                <h2> Adjuster Contact Information: </h2>
+                <div class="contact-item-container" data-name="claim-adj"></div>
+                <button type="button" class="btn-add-contact active">
+                    <i class="fi fi-br-plus"></i>
+                    Add contact
+                </button>
+            </div>
+        </div>
+        
+
+        <div class="tabs-controller">
+            <button class="btn-prev" id="btn-prev" type="button">
+                <i class="fi fi-sr-caret-left"></i>
+                Previous
+            </button>
+            <span class="tabs-spacer"></span>
+            <button class="btn-next active" id="btn-next" type="button">
+                Next 
+                <i class="fi fi-sr-caret-right"></i>
+            </button>
+            <button class="btn-submit" id="btn-submit" type="button">
+                Save 
+                <i class="fi fi-sr-disk"></i>
+            </button>
+        </div>
+    </form>
+
+
+</div>
+{% endblock main %}
+
+{% block scripts %} 
+{% endblock scripts %}

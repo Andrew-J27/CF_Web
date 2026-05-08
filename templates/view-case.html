@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block link %}
+<link rel="stylesheet" href="{% static 'css/view-case.css' %}">
+{% endblock link %}
+
+{% block main %}
+<div class="view-container">
+
+    <!-- HEADER -->
+    <div class="case-header">
+        <div class="status" style="background-color:{{status_color}};">
+            <h2>{{status}}</h2>
+        </div>
+
+        <div>
+            <h2>Case #{{case.id}}</h2>
+            <p class="case-title">{{case}}</p>
+        </div>
+        
+        <span class="case-header__spacer"></span>
+
+        <div class="actions">
+            <a href="{% url 'edit-case' case.id %}" class="btn btn-edit"> <i class="fi fi-sr-pencil"></i> Edit case</a>
+            <a href="" class="btn btn-delete"> <i class="fi fi-sr-trash-xmark"></i> Delete</a>
+        </div> 
+    </div>
+
+    <!-- GRID -->
+    <div class="grid">
+
+        <!-- CLIENT -->
+        <div class="info-card">
+            <h3>Client</h3>
+            <p><strong>Name:</strong> {{client.name}}</p>
+            <p><strong>Address:</strong> {{client.address}}</p>
+            <p><strong>SSN:</strong> {{client.ssn}}</p>
+            <p><strong>Birth Date:</strong> {{client.birth_date}}</p>
+
+            <h4>Contact</h4>
+            {% for contact in client_contacts %}
+                <p class="tag">({{contact.contact_type}}) {{contact.value}}</p>
+            {% empty %}
+                <p>No contact info</p>
+            {% endfor %}
+        </div>
+
+        <!-- EMPLOYER -->
+        <div class="info-card">
+            <h3>Employer</h3>
+            <p><strong>Name:</strong> {{employer.name}}</p>
+            <p><strong>Address:</strong> {{employer.address}}</p>
+        </div>
+
+        <!-- INSURANCE -->
+        <div class="info-card">
+            <h3>Insurance Carrier</h3>
+            <p><strong>Name:</strong> {{ins_carrier.name}}</p>
+            <p><strong>Address:</strong> {{ins_carrier.address}}</p>
+        </div>
+
+        <!-- CLAIM ADMIN -->
+        <div class="info-card">
+            <h3>Claim Administrator</h3>
+            <p><strong>Name:</strong> {{claim_admin.name}}</p>
+            <p><strong>Address:</strong> {{claim_admin.address}}</p>
+        </div>
+
+        <!-- ADJUSTER -->
+        <div class="info-card">
+            <h3>Adjuster</h3>
+            <p><strong>Name:</strong> {{claim_adj.name}}</p>
+
+            <h4>Contact</h4>
+            {% for contact in adj_contacts %}
+                <p class="tag">({{contact.contact_type}}) {{contact.value}}</p>
+            {% empty %}
+                <p>No contact info</p>
+            {% endfor %}
+        </div>
+
+        <!-- DEFENSE -->
+        <div class="info-card">
+            <h3>Defense Team</h3>
+            <p><strong>Law Firm:</strong> {{def_lawfirm.name}}</p>
+            <p><strong>Attorney:</strong> {{def_att.name}}</p>
+            <p><strong>Assistant:</strong> {{def_asst.name}}</p>
+
+            <h4>Assistant Contact</h4>
+            {% for contact in def_asst_contacts %}
+                <p class="tag">({{contact.contact_type}}) {{contact.value}}</p>
+            {% empty %}
+                <p>No contact info</p>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+{% endblock main %}

@@ -1,0 +1,28 @@
+{% extends "view-elements.html" %}
+
+{% block name %}
+Injury type
+{% endblock name %}
+
+{% block columns %}
+<tr> 
+    <th>ID</th> 
+    <th>Injury Name</th>
+</tr>
+{% endblock columns %}
+
+{% block rows %}
+{% for injury_type in injury_types %}
+<tr class="table-row">
+    <td data-field="id">{{ injury_type.id }}</td> 
+    <td data-field="name">{{ injury_type.name }}</td> 
+</tr>
+{% endfor %}
+{% endblock rows %}
+
+{% block form %} 
+<input type="hidden" name="id" >
+<label> Name:
+    <input type="text" name="name">
+</label> 
+{% endblock form %}

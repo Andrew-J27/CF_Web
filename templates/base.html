@@ -1,0 +1,126 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href=" {% static 'images/cf.ico' %} ">
+    <link rel="stylesheet" href=" {% static "css/base.css" %} ">
+
+    {% block link %}{% endblock link %}
+
+    <title>Comley Fresch System</title>
+</head>
+
+
+<body>
+    <header class="header" id="header">
+        <img src="{% static "images/cf.png" %}" alt="" class="header__logo">
+        <h1>
+            Comley Fresch, a Law Partnership 
+        </h1>
+        <span class="header__spacer"></span>
+        <a href=" {% url "create-case" %}" class="btn-add-case">
+            <i class="fi fi-br-plus"></i>
+            New case
+        </a>
+
+        <a href=" {% url "search-cases" %}" class="btn-edit-case">
+            <i class="fi fi-sr-pencil"></i>
+            Edit case
+        </a>
+
+        <a href=" {% url "search-cases" %}" class="btn-view-cases">
+            <i class="fi fi-br-search"></i>
+            View cases
+        </a>
+
+        <span class="header__spacer"></span>
+
+        <a href="" class="btn-user">
+            {{request.user.username}}
+            <i class="fi fi-sr-user"></i>
+        </a>
+
+        <a href="{% url 'logout' %}" class="btn-logout">
+            <i class="fi fi-br-exit"></i>
+        </a>
+    </header>
+    
+    <div class="main-container">
+        <aside class="aside aside-pane">
+
+            {% if user.is_authenticated %}
+                {% if user.username == "admin" %}
+                <span>Staff</span> <hr>
+                <a href=" {% url "view-attorneys" %}"> 
+                    <i class="fi fi-sr-review"></i>
+                    Attorneys 
+                </a>
+                <a href=" {% url "view-assistants" %}"> 
+                    <i class="fi fi-sr-review"></i>
+                    Assistants 
+                </a>
+                <a href=" {% url "view-case-statuses" %}"> 
+                    <i class="fi fi-sr-lawyer-man"></i>
+                    Case Statuses
+                </a>
+                {% endif %}
+            {% endif %}
+            
+
+            <span>Cases</span> <hr>
+            <a href=" {% url "view-clients" %}"> 
+                <i class="fi fi-sr-review"></i>
+                Clients 
+            </a>
+            <a href=" {% url "view-employers" %}">
+                <i class="fi fi-sr-review"></i>
+                Employers
+            </a>
+            <a href=" {% url "view-ins-carriers" %}">
+                <i class="fi fi-sr-insurance"></i>
+                Insurance Carriers
+            </a>
+
+            <a href=" {% url "view-injury-types" %}"> 
+                <i class="fi fi-sr-lawyer-man"></i>
+                Injury Types
+            </a>
+
+            <a href=" {% url "view-body-parts" %}"> 
+                <i class="fi fi-sr-lawyer-man"></i>
+                Body Parts
+            </a>
+
+            <a href=" {% url "view-claim-admins" %}">
+                <i class="fi fi-sr-user-shield"></i>
+                Claim Admins
+            </a>
+
+            <a href=" {% url "view-claim-adjusters" %}">
+                <i class="fi fi-sr-user-shield"></i>
+                Claim Adjusters
+            </a>
+            <a href=" {% url "view-def-lawfirms" %}">
+                <i class="fi fi-sr-balance-scale-left"></i>
+                Law firms
+            </a>
+
+            <a href=" {% url "view-def-attorneys" %}"> 
+                <i class="fi fi-sr-lawyer-man"></i>
+                Def. Attorneys 
+            </a>
+            <a href=" {% url "view-def-assistants" %}"> 
+                <i class="fi fi-sr-lawyer-man"></i>
+                Def. Assistants 
+            </a>
+        </aside>
+        <main class="main">
+            {% block main %} {% endblock main %}
+        </main>
+    </div> 
+</body>
+
+{% block scripts %}{% endblock scripts %}
+</html>

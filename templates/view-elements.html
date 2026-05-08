@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block link %}
+<link rel="stylesheet" href=" {% static 'css/view-elements.css' %} ">
+{% endblock link %}
+
+{% block main %}
+<div class="view-container" data-name="{% block name %}{% endblock name %}">
+    <form class="search" method="GET">
+        <label> Search:
+            <input type="text" name="search-value" value="{{ search_value }}">
+        </label>
+        <label style="display: none;"> 
+            Filter by
+            <select name="" id="select-filter">
+                <option value="">Clients</option>
+                <option value="">Status</option>
+                <option value="">Injuries</option>
+                <option value="">Employers</option>
+                <option value="">Insurance Carrier</option>
+                <option value="">Claim Admin</option>
+                <option value="">Claim Adjuster</option>
+                <option value="">D. Law firm</option>
+                <option value="">D. Attorney</option>
+                <option value="">D. Assistant</option>
+            </select>
+        </label>
+
+        <button class="btn-search" type="submit">
+            <i class="fi fi-br-search"></i>
+            Search
+        </button>
+
+        <button class="btn-add" type="button">
+            <i class="fi fi-br-plus"></i>
+        </button>
+    </form>
+    <div class="table-container">
+        <table>
+            <thead>
+                {% block columns %}{% endblock columns %}
+            </thead>
+            <tbody>
+                {% block rows %} {% endblock rows %}
+            </tbody>
+        </table>
+    </div>
+
+</div> 
+<form class="item-form" method="POST">
+    {% csrf_token %}
+    <div class="item-form__header">
+        <h2>New client</h2>
+        <button class="btn-close active" type="button">
+            <i class="fi fi-br-cross"></i>
+        </button>
+    </div>
+    
+    {% block form %} {% endblock form %}
+
+    <div class="item-form__button-container">
+        <button class="btn-delete" name="action" value="delete">
+            Delete 
+            <i class="fi fi-sr-trash-xmark"></i>
+        </button>
+    
+        <button class="btn-save" name="action" value="save">
+            Save 
+            <i class="fi fi-sr-disk"></i>
+        </button>
+
+        <button class="btn-create" name="action" value="create">
+            Create 
+            <i class="fi fi-sr-disk"></i>
+        </button>
+    </div>
+
+</form>
+{% endblock main %}
+
+{% block scripts %}
+<script src=" {% static 'js/views.js' %} "></script>
+{% endblock scripts %}

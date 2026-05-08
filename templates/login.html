@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <title>Comley Fresch. Login</title>
+</head>
+<body>
+    <form class="form" action="" method="POST">
+        {% csrf_token %}
+        <h1 class="form-title"> Comley Fresch </h1>
+        <label>Username:
+            <input type="text" name="username" value="{% if username %}{{username}}{% endif %}">
+        </label>
+        <label>Password:
+            <input type="password" name="password">
+        </label>
+        <p class="error-msg">{% if error_msg %}{{error_msg}}{% endif %}</p>
+        <button class="btn-login" type="submit"> Log In</button>
+    </form>
+</body>
+</html>

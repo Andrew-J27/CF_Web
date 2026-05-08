@@ -1,0 +1,173 @@
+@import url('https://cdn-uicons.flaticon.com/4.0.0/uicons-solid-rounded/css/uicons-solid-rounded.css');
+@import url('https://cdn-uicons.flaticon.com/4.0.0/uicons-bold-rounded/css/uicons-bold-rounded.css');
+@import url('https://cdn-uicons.flaticon.com/4.0.0/uicons-regular-straight/css/uicons-regular-straight.css');
+@import url('https://cdn-uicons.flaticon.com/4.0.0/uicons-solid-straight/css/uicons-solid-straight.css');
+
+:root {
+    --azul: #015287; 
+    --celeste: #5ba1d0;
+    
+    /* Colores para tabla */
+    --thead-bg: #023b5c;        /* Azul más oscuro para encabezado */
+    --thead-text: #ffffff;       /* Texto blanco para contraste */
+    --row-hover: #e6f3ff;        /* Azul muy claro para hover */
+    --border-color: #d4e3ed;     /* Color suave para bordes */
+    --row-even: #f8fafc;         /* Color para filas pares (opcional) */
+    --row-odd: #ffffff;           /* Color para filas impares */
+    --aside-bg: #012f4a;   /* Azul profundo */
+    --button-hover: #3b8ec4;
+    --button-current: #01406a;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+i {
+    display: flex;
+    align-items: center;
+    font-size: inherit;
+    width: min-content;
+    height: min-content;
+}
+
+li {
+    list-style: none;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+    font-size: inherit;
+}
+
+input, select {
+    font-size: inherit;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    font-family: sans-serif;
+    height: 100vh;
+    overflow: hidden;
+}
+
+button {
+    font-size: inherit;
+}
+
+.header {
+    padding: 0.25% 1%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    background-color: var(--azul);
+    color: white; 
+}
+
+.header__logo {
+    aspect-ratio: 1/1;
+    width: 1.6%;
+    border-radius: 50%;
+
+}
+
+.header h1 {
+    width: min-content;
+    font-size: 1.6rem;
+    text-wrap: nowrap;
+}
+
+.header a {
+    padding: 8px 15px;
+    display: flex;
+    gap: 10px;
+    font-size: 1.2rem;
+    border-radius: 5px;
+}
+
+.header a:hover {
+    background-color: var(--celeste);
+}
+
+.header__spacer:first-of-type {
+    flex-grow: 5;
+}
+
+.header__spacer:nth-of-type(2) {
+    flex-grow: 1;
+}
+
+.main-container {
+    display: flex;
+    flex-grow: 1;
+    width: 100%;
+    max-height: 100%;
+    overflow: hidden;
+}
+
+.main {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-grow: 1;
+    justify-content: center;
+    overflow: hidden;
+}
+ 
+.footer {
+    padding: 5px;
+    display: flex;
+    justify-content: center;
+    background-color: #aaa;
+}
+
+.copyright {
+    font-size: 1.2rem;
+}
+
+.aside {
+    padding: 1% 0.5%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: var(--aside-bg);
+    color: white;
+}
+
+.aside a {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    font-size: 1.2rem;
+    gap: 10px;
+    border-radius: 10px;
+    color: #ccc;
+}
+
+.aside a:hover {
+    background-color: var(--button-hover);
+    color: white;
+}
+
+.aside a.active {
+    background-color: var(--button-current);
+}
+
+.aside a.current {
+    background-color: var(--button-current);
+}
+
+.aside span {
+    margin-top: 15px;
+}
+
+
+
+
+
+

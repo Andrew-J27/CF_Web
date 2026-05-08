@@ -1,0 +1,28 @@
+{% extends "view-elements.html" %}
+
+{% block name %}
+Body part
+{% endblock name %}
+
+{% block columns %}
+<tr> 
+    <th>ID</th> 
+    <th>Part Name</th>
+</tr>
+{% endblock columns %}
+
+{% block rows %}
+{% for body_part in body_parts %}
+<tr class="table-row">
+    <td data-field="id">{{ body_part.id }}</td> 
+    <td data-field="name">{{ body_part.name }}</td> 
+</tr>
+{% endfor %}
+{% endblock rows %}
+
+{% block form %} 
+<input type="hidden" name="id" >
+<label> Name:
+    <input type="text" name="name">
+</label> 
+{% endblock form %}

@@ -1,0 +1,31 @@
+{% extends "view-elements.html" %}
+
+{% block name %}
+Assistant
+{% endblock name %}
+
+{% block columns %}
+<tr> 
+    <th>ID</th> 
+    <th>Assistant Name</th> 
+</tr>
+{% endblock columns %}
+
+{% block rows %}
+{% for assistant in assistants %}
+<tr class="table-row">
+    <td data-field="id">{{ assistant.id }}</td> 
+    <td data-field="name">{{ assistant.name }}</td>  
+</tr>
+{% endfor %}
+{% endblock rows %}
+
+{% block form %} 
+<input type="hidden" name="id">
+<label> Name:
+    <input type="text" name="name">
+</label>  
+<label> Password:
+    <input type="password" name="password">
+</label>  
+{% endblock form %}

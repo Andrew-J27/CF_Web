@@ -1,0 +1,26 @@
+<div class="injury-item">
+    <label class="date-label"> Date:
+        <input type="date" type="injury-date[]">
+    </label>
+    
+    <label class="select-label"> Body Part:
+        <select name="body-part[]">
+            {% for part in body_parts %}
+            <option value="{{part.id}}">{{part.name}}</option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <label class="select-label"> Lesion Type:
+        <select name="injury-type[]">
+            {% for type in injury_types %}
+            <option value="{{type.id}}">{{type.name}}</option>
+            {% endfor %}
+        </select>
+    </label>
+    
+
+    <button class="btn-delete-self active" type="button">
+        <i class="fi fi-sr-trash-xmark"></i>
+    </button>
+</div>
