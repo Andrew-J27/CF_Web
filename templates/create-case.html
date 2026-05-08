@@ -7,6 +7,7 @@
 
 <script type="module" src="{% static 'js/create.js' %}" defer> </script>
 <script type="module" src="{% static 'js/tabs.js'%}" defer></script>
+<script src="{% static 'js/validations.js' %}" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 {% endblock link %}
 
@@ -28,9 +29,10 @@
 
             <label> Full Name:
                 <select id="select-client" name="client">
-                {% for c in clients %}
+                    <option value="" disabled selected>Last Name, First Name </option>
+                    {% for c in clients %}
                     <option value="{{ c.id }}">{{ c.name }}</option>
-                {% endfor %}
+                    {% endfor %}
                 </select> 
             </label>
 
@@ -76,7 +78,7 @@
             </label>
             <span></span>
             <label for="select-attorney-id">Attorney Handling:
-                <select name="attorney-id" id="select-attorney-id" required {% if user_role == 'attorney' %} disabled {% endif %}>
+                <select name="attorney-id" id="select-attorney-id" required {% if user_role == 'attorney' %} readonly {% endif %}>
                     {% for attorney in attorneys %}
                     <option value="{{attorney.id}}" {% if user_role == 'attorney' and system_user.id == attorney.id %} selected {% endif %} >{{attorney.name}}</option>
                     {% endfor %}
@@ -84,7 +86,7 @@
             </label>
 
             <label for="select-assistant-id">Assistant Handling:
-                <select name="assistant-id" id="select-assistant-id" required {% if user_role == 'assistant' %} disabled {% endif %}> 
+                <select name="assistant-id" id="select-assistant-id" required {% if user_role == 'assistant' %} readonly {% endif %}> 
                     {% for assistant in assistants %}
                     <option value="{{assistant.id}}" {% if user_role == 'assistant' and system_user.id == assistant.id %} selected {% endif %} >{{assistant.name}}</option>
                     {% endfor %}
@@ -130,9 +132,10 @@
             <input type="hidden" name="employer-name">
             <label>Name:
                 <select id="select-employer" name="employer">
-                {% for emp in employers %}
+                    <option value="" disabled selected>-- Select existing or add New --</option>
+                    {% for emp in employers %}
                     <option value="{{ emp.id }}">{{ emp.name }}</option>
-                {% endfor %}
+                    {% endfor %}
                 </select> 
             </label>
             <label>Address:
@@ -144,9 +147,10 @@
             <input type="hidden" name="ins-carrier-name">
             <label>Company Name:
                 <select id="select-ins-carrier" name="ins-carrier">
-                {% for c in ins_carriers %}
+                    <option value="" disabled selected>-- Select existing or add New --</option>
+                    {% for c in ins_carriers %}
                     <option value="{{ c.id }}">{{ c.name }}</option>
-                {% endfor %}
+                    {% endfor %}
                 </select> 
             </label>
             <label>Address:
@@ -158,9 +162,10 @@
             <input type="hidden" name="def-lawfirm-name">
             <label>Law Firm Name:
                 <select id="select-def-lawfirm" name="def-lawfirm">
-                {% for law_firm in def_lawfirms %}
+                    <option value="" disabled selected>-- Select existing or add New --</option>
+                    {% for law_firm in def_lawfirms %}
                     <option value="{{ law_firm.id }}">{{ law_firm.name }}</option>
-                {% endfor %}
+                    {% endfor %}
                 </select>
             </label>
             <label>Address:
@@ -171,9 +176,10 @@
             <input type="hidden" name="def-att-name">
             <label> D. Attorney:
                 <select id="select-def-att" name="def-att">
-                {% for att in def_atts %}
+                    <option value="" disabled selected>-- Select existing or add New --</option>
+                    {% for att in def_atts %}
                     <option value="{{ att.id }}">{{ att.name }}</option>
-                {% endfor %}
+                    {% endfor %}
                 </select>
             </label>
             <span></span>
@@ -181,9 +187,10 @@
             <input type="hidden" name="def-asst-name">
             <label>D. Assistant: 
                 <select id="select-def-asst" name="def-asst">
-                {% for asst in def_assts %}
+                    <option value="" disabled selected>-- Select existing or add New --</option>
+                    {% for asst in def_assts %}
                     <option value="{{ asst.id }}">{{ asst.name }}</option>
-                {% endfor %}
+                    {% endfor %}
                 </select>
             </label>
             <span class="error-msg"></span> 

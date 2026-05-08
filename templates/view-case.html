@@ -23,7 +23,7 @@
 
         <div class="actions">
             <a href="{% url 'edit-case' case.id %}" class="btn btn-edit"> <i class="fi fi-sr-pencil"></i> Edit case</a>
-            <a href="" class="btn btn-delete"> <i class="fi fi-sr-trash-xmark"></i> Delete</a>
+            <a href="{% url 'delete-case' case.id %}" class="btn btn-delete"> <i class="fi fi-sr-trash-xmark"></i> Delete</a>
         </div> 
     </div>
 
@@ -32,52 +32,63 @@
 
         <!-- CLIENT -->
         <div class="info-card">
+
+            {% if client %}
             <h3>Client</h3>
             <p><strong>Name:</strong> {{client.name}}</p>
             <p><strong>Address:</strong> {{client.address}}</p>
             <p><strong>SSN:</strong> {{client.ssn}}</p>
             <p><strong>Birth Date:</strong> {{client.birth_date}}</p>
-
+            
             <h4>Contact</h4>
             {% for contact in client_contacts %}
-                <p class="tag">({{contact.contact_type}}) {{contact.value}}</p>
+            <p class="tag">({{contact.contact_type}}) {{contact.value}}</p>
             {% empty %}
-                <p>No contact info</p>
+            <p>No contact info</p>
             {% endfor %}
+            {% endif %}
         </div>
 
         <!-- EMPLOYER -->
         <div class="info-card">
+            {% if employer %}
             <h3>Employer</h3>
             <p><strong>Name:</strong> {{employer.name}}</p>
             <p><strong>Address:</strong> {{employer.address}}</p>
+            {% endif %}
         </div>
 
         <!-- INSURANCE -->
         <div class="info-card">
+            {% if ins_carrier %}
             <h3>Insurance Carrier</h3>
             <p><strong>Name:</strong> {{ins_carrier.name}}</p>
             <p><strong>Address:</strong> {{ins_carrier.address}}</p>
+            {% endif %}
         </div>
 
         <!-- CLAIM ADMIN -->
         <div class="info-card">
+            {% if claim_admin %}
             <h3>Claim Administrator</h3>
             <p><strong>Name:</strong> {{claim_admin.name}}</p>
             <p><strong>Address:</strong> {{claim_admin.address}}</p>
+            {% endif %}
         </div>
 
         <!-- ADJUSTER -->
         <div class="info-card">
+            {% if claim_adj %}
             <h3>Adjuster</h3>
             <p><strong>Name:</strong> {{claim_adj.name}}</p>
-
+            
             <h4>Contact</h4>
             {% for contact in adj_contacts %}
-                <p class="tag">({{contact.contact_type}}) {{contact.value}}</p>
+            <p class="tag">({{contact.contact_type}}) {{contact.value}}</p>
             {% empty %}
-                <p>No contact info</p>
+            <p>No contact info</p>
             {% endfor %}
+            {% endif %}
         </div>
 
         <!-- DEFENSE -->

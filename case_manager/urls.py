@@ -12,6 +12,7 @@ urlpatterns = [
     path('search-cases/', SearchCases.as_view(), name='search-cases'),
     path('view-cases/<int:case_id>/', ViewCase.as_view(), name='view-case'),
     path('edit-case/<int:case_id>/', UpdateCase.as_view(), name='edit-case'),
+    path('delete-case/<int:case_id>', DeleteCase.as_view(), name='delete-case'),
 
     path('view-clients/', ViewClients.as_view(), name='view-clients'),
     path('view-attorneys/', ViewAttorneys.as_view(), name='view-attorneys'),

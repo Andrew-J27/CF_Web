@@ -77,7 +77,7 @@ class Contact(BaseModel):
 
 class Attorney(BaseModel):
     name = models.CharField(max_length=50)
-    user = models.ForeignKey(SystemUser, on_delete=models.CASCADE, null=True)    
+    user = models.ForeignKey(SystemUser, on_delete=models.CASCADE, null=True, related_name='attorney')    
 
     class Meta:
         db_table = 'attorney'
@@ -87,7 +87,7 @@ class Attorney(BaseModel):
 
 class Assistant(BaseModel):
     name = models.CharField(max_length=50)
-    user = models.ForeignKey(SystemUser, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(SystemUser, on_delete=models.CASCADE, null=True, related_name='assistant')
 
     class Meta:
         db_table = 'assistant'

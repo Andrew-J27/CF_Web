@@ -103,7 +103,6 @@ class CreateCase(View):
 
         try:
             with transaction.atomic():
-                print("comienza")
 
                 # =====================
                 # CLIENTE (Tom Select)
@@ -152,6 +151,7 @@ class CreateCase(View):
                 # ATTORNEY 
                 # =====================
                 attorney_id = data.get('attorney-id')
+                print(attorney_id)
                 attorney = Attorney.objects.get(id=attorney_id)
 
                 # =====================
@@ -685,6 +685,20 @@ class UpdateCase(View):
         return redirect('view-case', case_id=case_id)
 
 @method_decorator(login_required, name='dispatch')
+class DeleteCase(View):
+
+    def get(self, request, case_id):
+
+        case = Case.objects.get(id=case_id)
+
+        case.visible = False
+
+        case.save()
+
+        return redirect('search-cases')
+
+
+@method_decorator(login_required, name='dispatch')
 class SearchCases(View):
 
     def get(self, request):
@@ -707,7 +721,28 @@ class SearchCases(View):
             ('def_assistant', 'D. Assistant'),
         ]
 
-        cases = Case.objects.all().order_by('-id')
+        if request.user.systemuser.role == "attorney":
+            user_role = 'attorney'
+            system_user = Attorney.objects.get(user=request.user.systemuser)
+
+        elif request.user.systemuser.role == "assistant":
+            user_role = 'assistant'
+            system_user = Assistant.objects.get(user=request.user.systemuser)
+
+        else:
+            user_role = 'admin'
+            system_user = None
+
+        print(user_role)
+        print(system_user)
+
+        if user_role == "attorney":
+            cases = Case.objects.filter(attorney=system_user, visible=True).order_by('-id')
+        elif user_role == "assistant":
+            cases = Case.objects.filter(assistant=system_user, visible=True).order_by('-id')
+        else:
+            cases = Case.objects.filter(visible=True).order_by('-id'),
+
 
         if search:
             if selected_filter == 'client':
@@ -761,7 +796,7 @@ class SearchCases(View):
         
         else:
             context = {
-                'cases': Case.objects.filter(visible=True).order_by('-id'),
+                'cases': cases,
                 'selected_filter': None,
                 'filter_options': filter_options,
             }
@@ -794,7 +829,6 @@ class ViewCase(View):
         } 
 
         return render(request, 'view-case.html', context)
-
 
 # Vistas individuales para cada modelo.
 @method_decorator(login_required, name='dispatch')
@@ -1370,7 +1404,12 @@ class ViewAttorneys(View):
             attorney.user = user
 
         user.username = data.get("name")
-        user.set_password(data.get("password"))
+
+        password = data.get("password")
+
+        if password:        
+            user.set_password(data.get("password"))
+
         user.role = "attorney"
         user.save()
 
