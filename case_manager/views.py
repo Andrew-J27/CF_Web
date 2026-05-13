@@ -83,6 +83,7 @@ def CaseContext(request, form_class=CaseForm(), return_query=True):
 
     return context
 
+@method_decorator(login_required, name='dispatch')
 class CreateCase(View):
     
     def get(self, request):
@@ -120,6 +121,7 @@ class CreateCase(View):
             'claim_adjuster_contact_formset': claim_adjuster_contact_formset,
             'def_attorney_contact_formset': defense_attorney_contact_formset,
             'def_assistant_contact_formset': defense_assistant_contact_formset,
+            'create_form':1,
         }
         return render(request, 'create-case.html', context)
 
@@ -249,9 +251,11 @@ class CreateCase(View):
             'claim_adjuster_contact_formset': claim_adjuster_contact_formset,
             'def_attorney_contact_formset': defense_attorney_contact_formset,
             'def_assistant_contact_formset': defense_assistant_contact_formset,
+            'create_form':1,
         }
         return render(request, 'create-case.html', context)
 
+@method_decorator(login_required, name='dispatch')
 class UpdateCase(View):
     
     def get(self, request, pk):
@@ -465,7 +469,7 @@ class UpdateCase(View):
         }
         return render(request, 'create-case.html', context)
     
-
+@method_decorator(login_required, name='dispatch')
 class DetailCase(DetailView):
     model = Case
     template_name = 'case-detail.html'
@@ -476,9 +480,11 @@ class DetailCase(DetailView):
         context['active_injuries'] = self.object.injuries.filter(active=True)
         return context  
 
+@method_decorator(login_required, name='dispatch')
 class DeleteCase(View):
     def post(self, request, pk):
 
+        print("que hace?")
         case = Case.objects.get(id=pk)
 
         case.soft_delete()
@@ -488,6 +494,9 @@ class DeleteCase(View):
             injury.soft_delete()
             injury.save()
 
+        return redirect('case')
+
+@method_decorator(login_required, name='dispatch')
 class RestoreCase(View):
     def post(self, request, pk):
         case = Case.objects.get(id=pk)
@@ -499,7 +508,9 @@ class RestoreCase(View):
             injury.restore()
             injury.save()
 
+        return redirect('case')
 
+@method_decorator(login_required, name='dispatch')
 class ListCases(ListView):
     model = Case
     template_name = 'list-cases.html'
@@ -513,16 +524,6 @@ class ListCases(ListView):
         context['detail_url'] = True
         context['list_url'] = 'case'
         return context | added_context 
-
-
-@method_decorator(login_required, name='dispatch')    
-class DeleteCase(View):
-    def post(self, request, pk):
-        case = CaseStatus.objects.get(id=pk) 
-        case.soft_delete()
-
-        return redirect('case')
-# MODELS CRUD
 
 def CaseStatusContext(request, form_class=CaseStatusForm(), return_query=True): 
     search = request.GET.get('search')
@@ -618,6 +619,7 @@ def AttorneyContext(request, form_class=SystemAttorneyForm(), return_query=True)
         'form': form_class,
         'list_url':'attorney',
         'search': search,
+        'update_form':SystemAttorneyUpdateForm,
         'create_active': False,
         'update_active': False,
         'delete_active': False,
@@ -688,7 +690,6 @@ class RestoreAttorney(View):
         attorney.restore()
         return redirect('attorney')
     
-
 # Contexto para Assistant
 def AssistantContext(request, form_class=SystemAssistantForm(), return_query=True):
     search = request.GET.get('search') 
@@ -700,6 +701,7 @@ def AssistantContext(request, form_class=SystemAssistantForm(), return_query=Tru
         'form': form_class,
         'list_url':'assistant',
         'search': search,
+        'update_form':SystemAssistantUpdateForm,
         'create_active': False,
         'update_active': False,
         'delete_active': False,
@@ -1830,6 +1832,7 @@ from django.utils import timezone
 from datetime import datetime, timedelta 
 import pandas as pd
 
+@method_decorator(login_required, name='dispatch')
 class Report(View):
 
     def get(self, request):

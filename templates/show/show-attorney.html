@@ -30,13 +30,20 @@
 {% endblock create_form %}
 
 {% block update_form %}
-{% for field in form %}
+{% for field in update_form %}
 <div class="form-field">
     {{field.label_tag}}
     {{field}}
     {{field.errors}}
 </div>
 {% endfor %}
+{% if form.non_field_errors %}
+    <ul class="errorlist">
+        {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>  <!-- Aquí aparece "Passwords don't match" -->
+        {% endfor %}
+    </ul>
+{% endif %}
 {% endblock update_form %}
 
 {% block create_url %}{% url "create-attorney" %}{% endblock create_url %}

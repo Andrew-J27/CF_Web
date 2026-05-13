@@ -1,6 +1,7 @@
 from django.db import models as m
 from django.contrib.auth.models import User
 from datetime import date
+from simple_history.models import HistoricalRecords
 
 # Create your models here.
 class SystemUser(User):
@@ -156,6 +157,7 @@ class Case(BaseModel):
 
     created_at = m.DateTimeField(auto_now_add=True)
     updated_at = m.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
 
     class Meta:
         db_table = 'case'
@@ -192,7 +194,7 @@ class Injury(BaseModel):
     case = m.ForeignKey(Case, on_delete=m.CASCADE, related_name='injuries')
     date = m.DateField()
     part = m.ForeignKey(BodyPart, on_delete=m.CASCADE)
-    type = m.ForeignKey(InjuryType, on_delete=m.CASCADE)
+    type = m.ForeignKey(InjuryType, on_delete=m.CASCADE, null=True)
 
     class Meta:
         db_table = 'injury'
@@ -206,7 +208,6 @@ class Injury(BaseModel):
         
         elif not self.part and self.type:
             return self.type.name
-
 
 # Contacts 
 class Contact(BaseModel):

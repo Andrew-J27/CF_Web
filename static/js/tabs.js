@@ -5,8 +5,20 @@ const next_btn = tabs.querySelector('.btn-next');
 const prev_btn = tabs.querySelector('.btn-prev');
 const submit_btn = tabs.querySelector('.btn-submit');
 
+if (tabs.dataset.create === "1") {
+    tabs.querySelector('button[data-tab="6"]').style.display = 'none';
+    tabs.querySelector('button[data-tab="7"]').style.display = 'none';
+    tabs.querySelector('div[data-tab="6"]').style.display = 'none';
+    tabs.querySelector('div[data-tab="7"]').style.display = 'none';
+
+    tabs.dataset.max = "5"
+}
+
 let currentTabId = "1";
-let maxTab = "7";
+let maxTab = tabs.dataset.max;
+console.log(maxTab);
+
+
 
 function isLastTabActive() {
     if (currentTabId === maxTab) 
@@ -37,6 +49,8 @@ function manageControls() {
     // Submit Button
     if (isLastTabActive()) 
         submit_btn.classList.add('active'); 
+    else 
+        submit_btn.classList.remove('active');
 }
 
 function activateTab(tabId) {
@@ -85,4 +99,5 @@ const form = document.querySelector('.form');
 
 submit_btn.addEventListener('click', function() {
     form.submit();
-})
+});
+ 

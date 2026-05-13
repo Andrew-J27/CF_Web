@@ -14,10 +14,9 @@ urlpatterns = [
     path('case/<int:pk>/update/', UpdateCase.as_view(), name='update-case'),
     path('case/<int:pk>/detail/', DetailCase.as_view(), name='detail-case'),
     path('case/<int:pk>/delete/', DeleteCase.as_view(), name='delete-case'),
-    path('case/<int:pk>/restore/', DeleteCase.as_view(), name='restore-case'),
+    path('case/<int:pk>/restore/', RestoreCase.as_view(), name='restore-case'),
 
     # REPORT
-
     path('report/', Report.as_view(), name='report'),
     path('download-report/', Home.as_view(), name='case_report'),    
 

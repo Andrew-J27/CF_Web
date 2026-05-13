@@ -25,6 +25,7 @@ main {
     flex-direction: row; 
     height: max-content;
     flex-shrink: 0;
+    background-color: #e3e3e3;
 }
 
 .tab-btn {
@@ -72,7 +73,7 @@ main {
     display: none;
 }
 
-.btn-submit { 
+.btn-submit.active { 
     display: flex;
     gap: 10px;
 }

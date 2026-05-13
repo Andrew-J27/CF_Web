@@ -3,7 +3,7 @@
 .detail {
     flex-grow: 1;
     min-width: 50%;
-    margin: 1% auto;
+    margin: 1%;
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-auto-rows: max-content;
@@ -43,6 +43,10 @@
     gap: 15px;
 }
 
+.card p {
+    max-width: 100%;
+}
+
 .card p,
 .card p strong {
     font-size: 1.2rem;
@@ -70,7 +74,14 @@ h2.detail-header {
 
 
 
-h2 a {
+h2 a, h2 button {
+    font-size: 1.8rem;
     padding: 8px;
     border: 1px solid gray;
+}
+
+.card  p.contact-p {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
 }

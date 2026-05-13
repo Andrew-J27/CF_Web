@@ -10,7 +10,7 @@
 {% endblock link %}
 
 {% block main %}
-<div class="tabs" data-initial="{% if initial %}{{initial}}{% else %}1{% endif %}"> 
+<div class="tabs" data-initial="{% if initial %}{{initial}}{% else %}1{% endif %}" data-max="7" data-create="{{create_form}}"> 
     <div class="tab-buttons">
         <button class="tab-btn active" data-tab="1">Client</button>
         <button class="tab-btn" data-tab="2">Case</button>
@@ -373,8 +373,7 @@
         <span class="spacer"></span>
         <button class="btn-submit">
             <i class="fi fi-sr-disk"></i> Save
-        </button>
-        <span class="spacer"></span>
+        </button> 
         <button class="btn-next active"> 
             Next <i class="fi fi-sr-caret-right"></i>
         </button>

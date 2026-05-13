@@ -13,12 +13,17 @@
     <h2 class="detail-header"> 
         {{case.name}} 
         <span class="spacer"></span>
+
         <a href="{% url 'update-case' case.id %}" class="update-btn">
             <i class="fi fi-sr-pencil"></i>
         </a>
-        <a href="{% url 'delete-case' case.id %}" class="delete-btn">
-            <i class="fi fi-sr-trash"></i>
-        </a>
+
+        <form action="{% url 'delete-case' case.id %}" class="delete-case" method='POST'>
+            {% csrf_token %}
+            <button class="delete-btn">
+                <i class="fi fi-sr-trash"></i>
+            </button>
+        </form>
     </h2>
 
     <div class="card">
@@ -40,7 +45,7 @@
                 <strong><i class="fi fi-sr-cake-birthday"></i> Date of birth:</strong>
                 {{case.client.birth|date:"d-m-Y"|default:"Not registered"}}
             </p>
-            <p>
+            <p class="contact-p">
                 <strong><i class="fi fi-sr-phone-call"></i> Contacts:</strong>
                 {% for contact in case.client.contacts.all %}
                     <span class="contact-badge">
@@ -140,7 +145,7 @@
                     <br><small>{{case.claim_admin.address}}</small>
                 {% endif %}
             </p>
-            <p>
+            <p class="contact-p">
                 <strong><i class="fi fi-sr-user"></i> Claim Adjuster:</strong>
                 {{case.claim_adjuster.name|default:"Not assigned"}}
                 {% with contacts=case.claim_adjuster.contacts.all %}
@@ -169,7 +174,7 @@
                     <br><small>{{case.def_lawfirm.address}}</small>
                 {% endif %}
             </p>
-            <p>
+            <p class="contact-p">
                 <strong><i class="fi fi-sr-gavel"></i> Defense Attorney:</strong>
                 {{case.def_attorney.name|default:"Not assigned"}}
                 {% with contacts=case.def_attorney.contacts.all %}
@@ -185,7 +190,7 @@
                     {% endif %}
                 {% endwith %}
             </p>
-            <p>
+            <p class="contact-p">
                 <strong><i class="fi fi-sr-clipboard"></i> Defense Assistant:</strong>
                 {{case.def_assistant.name|default:"Not assigned"}}
                 {% with contacts=case.def_assistant.contacts.all %}
