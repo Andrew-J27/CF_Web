@@ -84,20 +84,20 @@ def CaseContext(request, form_class=CaseForm(), return_query=True):
     return context
 
 class CreateCase(View):
-
+    
     def get(self, request):
         # GET request: formularios vacíos
         case_form = CaseForm(prefix='case')
         client_form = ClientForm(prefix='client')
         employer_form = EmployerForm(prefix='employer')
 
-        # Usar los forms opcionales
-        insurance_form = InsuranceCarrierOptionalForm(prefix='insurance')
-        def_lawfirm_form = DefenseLawFirmOptionalForm(prefix='def_lawfirm')
-        def_attorney_form = DefenseAttorneyOptionalForm(prefix='def_attorney')
-        def_assistant_form = DefenseAssistantOptionalForm(prefix='def_assistant')
-        claim_admin_form = ClaimAdministratorOptionalForm(prefix='claim_admin')
-        claim_adjuster_form = ClaimAdjusterOptionalForm(prefix='claim_adjuster')
+        # Usar los forms opcionales SIN instancia (None explícito)
+        insurance_form = InsuranceCarrierOptionalForm(prefix='insurance', instance=None)
+        def_lawfirm_form = DefenseLawFirmOptionalForm(prefix='def_lawfirm', instance=None)
+        def_attorney_form = DefenseAttorneyOptionalForm(prefix='def_attorney', instance=None)
+        def_assistant_form = DefenseAssistantOptionalForm(prefix='def_assistant', instance=None)
+        claim_admin_form = ClaimAdministratorOptionalForm(prefix='claim_admin', instance=None)
+        claim_adjuster_form = ClaimAdjusterOptionalForm(prefix='claim_adjuster', instance=None)
  
         client_contact_formset = ClientContactFormSet(prefix='client_contacts')
         injury_formset = InjuryFormSet(prefix='injuries')
@@ -137,13 +137,13 @@ class CreateCase(View):
         client_form = ClientForm(data, prefix='client')
         employer_form = EmployerForm(data, prefix='employer')
         
-        # Forms OPCIONALES (usando tus nuevos OptionalModelForm)
-        insurance_form = InsuranceCarrierOptionalForm(data, prefix='insurance')
-        def_lawfirm_form = DefenseLawFirmOptionalForm(data, prefix='def_lawfirm')
-        def_attorney_form = DefenseAttorneyOptionalForm(data, prefix='def_attorney')
-        def_assistant_form = DefenseAssistantOptionalForm(data, prefix='def_assistant')
-        claim_admin_form = ClaimAdministratorOptionalForm(data, prefix='claim_admin')
-        claim_adjuster_form = ClaimAdjusterOptionalForm(data, prefix='claim_adjuster')
+        # ✅ CORREGIDO: Forms OPCIONALES con instance=None explícito
+        insurance_form = InsuranceCarrierOptionalForm(data, prefix='insurance', instance=None)
+        def_lawfirm_form = DefenseLawFirmOptionalForm(data, prefix='def_lawfirm', instance=None)
+        def_attorney_form = DefenseAttorneyOptionalForm(data, prefix='def_attorney', instance=None)
+        def_assistant_form = DefenseAssistantOptionalForm(data, prefix='def_assistant', instance=None)
+        claim_admin_form = ClaimAdministratorOptionalForm(data, prefix='claim_admin', instance=None)
+        claim_adjuster_form = ClaimAdjusterOptionalForm(data, prefix='claim_adjuster', instance=None)
         
         # Formsets para contactos
         claim_adjuster_contact_formset = ClaimAdjusterContactFormSet(
@@ -156,11 +156,18 @@ class CreateCase(View):
             data, prefix='def_assistant_contacts'
         )
         
-        # Validación: forms obligatorios + formsets
-        required_forms_valid = all([
+        # Validar TODOS los forms (obligatorios + opcionales + formsets)
+        # Los opcionales se validan aunque estén vacíos
+        all_forms_valid = all([
             case_form.is_valid(),
             client_form.is_valid(),
             employer_form.is_valid(),
+            insurance_form.is_valid(),
+            def_lawfirm_form.is_valid(),
+            def_attorney_form.is_valid(),
+            def_assistant_form.is_valid(),
+            claim_admin_form.is_valid(),
+            claim_adjuster_form.is_valid(),
             injury_formset.is_valid(),
             client_contact_formset.is_valid(),
             claim_adjuster_contact_formset.is_valid(),
@@ -168,8 +175,7 @@ class CreateCase(View):
             defense_assistant_contact_formset.is_valid(),
         ])
         
-        # Los forms opcionales se validan solos con su método has_data()
-        if required_forms_valid:
+        if all_forms_valid:
             # Guardar instancias OBLIGATORIAS
             client = client_form.save()
             employer = employer_form.save()
@@ -179,13 +185,14 @@ class CreateCase(View):
             case.client = client
             case.employer = employer
             
-            # Procesar forms OPCIONALES (solo guardan si tienen datos)
-            insurance = insurance_form.save()  # Retorna None si no hay datos
-            def_lawfirm = def_lawfirm_form.save()
-            def_attorney = def_attorney_form.save()
-            def_assistant = def_assistant_form.save()
-            claim_admin = claim_admin_form.save()
-            claim_adjuster = claim_adjuster_form.save()
+            # ✅ CORREGIDO: Procesar forms OPCIONALES
+            # El OptionalModelForm.save() debe retornar None si no hay datos
+            insurance = insurance_form.save() if insurance_form.has_changed() else None
+            def_lawfirm = def_lawfirm_form.save() if def_lawfirm_form.has_changed() else None
+            def_attorney = def_attorney_form.save() if def_attorney_form.has_changed() else None
+            def_assistant = def_assistant_form.save() if def_assistant_form.has_changed() else None
+            claim_admin = claim_admin_form.save() if claim_admin_form.has_changed() else None
+            claim_adjuster = claim_adjuster_form.save() if claim_adjuster_form.has_changed() else None
             
             # Asignar solo si no son None
             if insurance:
@@ -207,7 +214,11 @@ class CreateCase(View):
             client_contact_formset.instance = client
             client_contact_formset.save()
             
-            # Guardar formsets solo si las instancias existen
+            # Guardar injury_formset
+            injury_formset.instance = case
+            injury_formset.save()
+            
+            # ✅ CORREGIDO: Guardar formsets solo si las instancias existen
             if claim_adjuster:
                 claim_adjuster_contact_formset.instance = claim_adjuster
                 claim_adjuster_contact_formset.save()
@@ -219,10 +230,6 @@ class CreateCase(View):
             if def_assistant:
                 defense_assistant_contact_formset.instance = def_assistant
                 defense_assistant_contact_formset.save()
-            
-            # Opcional: guardar injury_formset cuando lo actives
-            injury_formset.instance = case
-            injury_formset.save()
             
             return redirect('case')
         
@@ -275,7 +282,7 @@ class UpdateCase(View):
         claim_adjuster_form = ClaimAdjusterOptionalForm(prefix='claim_adjuster', instance=claim_adjuster) if claim_adjuster else ClaimAdjusterOptionalForm(prefix='claim_adjuster')
         
         # Inicializar formsets con las instancias relacionadas
-        injury_formset = InjuryFormSet(prefix='injuries')
+        injury_formset = InjuryFormSet(prefix='injuries', instance=case, queryset=case.injuries.filter(active=True))
         client_contact_formset = ClientContactFormSet(prefix='client_contacts', instance=client, queryset=client.contacts.filter(active=True))
         claim_adjuster_contact_formset = ClaimAdjusterContactFormSet(prefix='claim_adjuster_contacts', instance=claim_adjuster, queryset=claim_adjuster.contacts.filter(active=True)) if claim_adjuster else ClaimAdjusterContactFormSet(prefix='claim_adjuster_contacts')
         defense_attorney_contact_formset = DefenseAttorneyContactFormSet(prefix='def_attorney_contacts', instance=def_attorney, queryset=def_attorney.contacts.filter(active=True)) if def_attorney else DefenseAttorneyContactFormSet(prefix='def_attorney_contacts')
@@ -329,12 +336,41 @@ class UpdateCase(View):
         claim_admin_form = ClaimAdministratorOptionalForm(data, prefix='claim_admin', instance=claim_admin) if claim_admin else ClaimAdministratorOptionalForm(data, prefix='claim_admin')
         claim_adjuster_form = ClaimAdjusterOptionalForm(data, prefix='claim_adjuster', instance=claim_adjuster) if claim_adjuster else ClaimAdjusterOptionalForm(data, prefix='claim_adjuster')
         
-        # Formsets anidados
-        injury_formset = InjuryFormSet(data, prefix='injuries')
-        client_contact_formset = ClientContactFormSet(data, prefix='client_contacts', instance=client)
-        claim_adjuster_contact_formset = ClaimAdjusterContactFormSet(data, prefix='claim_adjuster_contacts', instance=claim_adjuster) if claim_adjuster else ClaimAdjusterContactFormSet(data, prefix='claim_adjuster_contacts')
-        defense_attorney_contact_formset = DefenseAttorneyContactFormSet(data, prefix='def_attorney_contacts', instance=def_attorney) if def_attorney else DefenseAttorneyContactFormSet(data, prefix='def_attorney_contacts')
-        defense_assistant_contact_formset = DefenseAssistantContactFormSet(data, prefix='def_assistant_contacts', instance=def_assistant) if def_assistant else DefenseAssistantContactFormSet(data, prefix='def_assistant_contacts')
+        # ✅ CORREGIDO: Formsets con instance desde el principio
+        injury_formset = InjuryFormSet(data, prefix='injuries', instance=case, queryset=case.injuries.all())
+        client_contact_formset = ClientContactFormSet(data, prefix='client_contacts', instance=client, queryset=client.contacts.all())
+        
+        # Formsets opcionales con instance solo si existen
+        claim_adjuster_contact_formset = None
+        defense_attorney_contact_formset = None
+        defense_assistant_contact_formset = None
+        
+        if claim_adjuster:
+            claim_adjuster_contact_formset = ClaimAdjusterContactFormSet(
+                data, prefix='claim_adjuster_contacts', 
+                instance=claim_adjuster, 
+                queryset=claim_adjuster.contacts.all()
+            )
+        else:
+            claim_adjuster_contact_formset = ClaimAdjusterContactFormSet(data, prefix='claim_adjuster_contacts')
+        
+        if def_attorney:
+            defense_attorney_contact_formset = DefenseAttorneyContactFormSet(
+                data, prefix='def_attorney_contacts', 
+                instance=def_attorney, 
+                queryset=def_attorney.contacts.all()
+            )
+        else:
+            defense_attorney_contact_formset = DefenseAttorneyContactFormSet(data, prefix='def_attorney_contacts')
+        
+        if def_assistant:
+            defense_assistant_contact_formset = DefenseAssistantContactFormSet(
+                data, prefix='def_assistant_contacts', 
+                instance=def_assistant, 
+                queryset=def_assistant.contacts.all()
+            )
+        else:
+            defense_assistant_contact_formset = DefenseAssistantContactFormSet(data, prefix='def_assistant_contacts')
         
         # Validar formularios obligatorios
         required_forms_valid = all([
@@ -342,15 +378,16 @@ class UpdateCase(View):
             client_form.is_valid(),
             employer_form.is_valid(),
             client_contact_formset.is_valid(),
+            injury_formset.is_valid(),  # ✅ Añadido aquí
         ])
         
-        # Validar formsets opcionales solo si existen
+        # Validar formsets opcionales
         optional_formsets_valid = True
-        if claim_adjuster:
+        if claim_adjuster_contact_formset:
             optional_formsets_valid = optional_formsets_valid and claim_adjuster_contact_formset.is_valid()
-        if def_attorney:
+        if defense_attorney_contact_formset:
             optional_formsets_valid = optional_formsets_valid and defense_attorney_contact_formset.is_valid()
-        if def_assistant:
+        if defense_assistant_contact_formset:
             optional_formsets_valid = optional_formsets_valid and defense_assistant_contact_formset.is_valid()
         
         if required_forms_valid and optional_formsets_valid:
@@ -381,28 +418,31 @@ class UpdateCase(View):
             
             case.save()
             
-            # Guardar formsets
+            # ✅ CORREGIDO: Guardar injury_formset (ya tiene instance=case)
+            injury_formset.save()
+            
+            # Guardar client_contact_formset
             client_contact_formset.save()
             
-            # Guardar formsets opcionales solo si las instancias existen
+            # Guardar formsets opcionales
             if new_claim_adjuster:
                 claim_adjuster_contact_formset.instance = new_claim_adjuster
                 claim_adjuster_contact_formset.save()
             elif claim_adjuster and not new_claim_adjuster:
-                # Si se eliminó el claim_adjuster, también eliminar sus contactos?
-                claim_adjuster_contact_formset.instance = None
+                # Opcional: eliminar contactos del claim_adjuster eliminado
+                ClaimAdjusterContact.objects.filter(claim_adjuster=claim_adjuster).delete()
             
             if new_def_attorney:
                 defense_attorney_contact_formset.instance = new_def_attorney
                 defense_attorney_contact_formset.save()
             elif def_attorney and not new_def_attorney:
-                defense_attorney_contact_formset.instance = None
+                DefenseAttorneyContact.objects.filter(defense_attorney=def_attorney).delete()
             
             if new_def_assistant:
                 defense_assistant_contact_formset.instance = new_def_assistant
                 defense_assistant_contact_formset.save()
             elif def_assistant and not new_def_assistant:
-                defense_assistant_contact_formset.instance = None
+                DefenseAssistantContact.objects.filter(defense_assistant=def_assistant).delete()
             
             return redirect('case')
         
@@ -417,12 +457,14 @@ class UpdateCase(View):
             'def_assistant_form': def_assistant_form,
             'claim_admin_form': claim_admin_form,
             'claim_adjuster_form': claim_adjuster_form,
+            'injury_formset': injury_formset,
             'client_contact_formset': client_contact_formset,
             'claim_adjuster_contact_formset': claim_adjuster_contact_formset,
             'def_attorney_contact_formset': defense_attorney_contact_formset,
             'def_assistant_contact_formset': defense_assistant_contact_formset,
         }
         return render(request, 'create-case.html', context)
+    
 
 class DetailCase(DetailView):
     model = Case
@@ -431,7 +473,32 @@ class DetailCase(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['active_injuries'] = self.object.injuries.filter(active=True)
         return context  
+
+class DeleteCase(View):
+    def post(self, request, pk):
+
+        case = Case.objects.get(id=pk)
+
+        case.soft_delete()
+        case.save()
+
+        for injury in case.injuries.all():
+            injury.soft_delete()
+            injury.save()
+
+class RestoreCase(View):
+    def post(self, request, pk):
+        case = Case.objects.get(id=pk)
+
+        case.restore()
+        case.save()
+
+        for injury in case.injuries.all():
+            injury.restore()
+            injury.save()
+
 
 class ListCases(ListView):
     model = Case
@@ -503,7 +570,7 @@ class CreateStatus(CreateView):
     def form_invalid(self, form):  
         search = self.request.GET.get('search')
 
-        context = CaseStatusContext(search, form) 
+        context = CaseStatusContext(self.request, form) 
         context['create_active'] = True
         
         return self.render_to_response(context)
@@ -518,7 +585,7 @@ class UpdateStatus(UpdateView):
     def form_invalid(self, form): 
         search = self.request.GET.get('search')
 
-        context = CaseStatusContext(search, form) 
+        context = CaseStatusContext(self.request, form) 
         context['update_active'] = True
         context['temp_name'] = self.get_object().name
         
@@ -589,20 +656,20 @@ class CreateAttorney(CreateView):
     
     def form_invalid(self, form):  
         search = self.request.GET.get('search', '')
-        context = AttorneyContext(search, form) 
+        context = AttorneyContext(self.request, form) 
         context['create_active'] = True
         return self.render_to_response(context)
 
 @method_decorator(login_required, name='dispatch')
 class UpdateAttorney(UpdateView):
     model = Attorney
-    form_class = SystemAttorneyForm
+    form_class = SystemAttorneyUpdateForm
     success_url = reverse_lazy('attorney')
     template_name = 'show/show-attorney.html'
     
     def form_invalid(self, form): 
         search = self.request.GET.get('search', '')
-        context = AttorneyContext(search, form) 
+        context = AttorneyContext(self.request, form) 
         context['update_active'] = True
         context['temp_name'] = self.get_object().name
         return self.render_to_response(context)
@@ -671,7 +738,7 @@ class CreateAssistant(CreateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = AssistantContext(search, form)
+        context = AssistantContext(self.request, form)
         context['create_active'] = True
         return self.render_to_response(context)
     
@@ -682,13 +749,13 @@ class CreateAssistant(CreateView):
 @method_decorator(login_required, name='dispatch')
 class UpdateAssistant(UpdateView):
     model = Assistant
-    form_class = SystemAssistantForm
+    form_class = SystemAssistantUpdateForm
     success_url = reverse_lazy('assistant')
     template_name = 'show/show-assistant.html'
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = AssistantContext(search, form)
+        context = AssistantContext(self.request, form)
         context['update_active'] = True
         context['object_name'] = self.get_object().name
         return self.render_to_response(context)
@@ -761,7 +828,7 @@ class CreateEmployer(CreateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = EmployerContext(search, form)
+        context = EmployerContext(self.request, form)
         context['create_active'] = True
         return self.render_to_response(context)
 
@@ -774,7 +841,7 @@ class UpdateEmployer(UpdateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = EmployerContext(search, form)
+        context = EmployerContext(self.request, form)
         context['update_active'] = True
         context['object_name'] = self.get_object().name
         return self.render_to_response(context)
@@ -844,7 +911,7 @@ class CreateInsuranceCarrier(CreateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = InsuranceCarrierContext(search, form)
+        context = InsuranceCarrierContext(self.request, form)
         context['create_active'] = True
         return self.render_to_response(context)
     
@@ -862,7 +929,7 @@ class UpdateInsuranceCarrier(UpdateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = InsuranceCarrierContext(search, form)
+        context = InsuranceCarrierContext(self.request, form)
         context['update_active'] = True
         context['object_name'] = self.get_object().name
         return self.render_to_response(context)
@@ -942,7 +1009,7 @@ class CreateClaimAdministrator(CreateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = ClaimAdministratorContext(search, form)
+        context = ClaimAdministratorContext(self.request, form)
         context['create_active'] = True
         return self.render_to_response(context)
     
@@ -959,7 +1026,7 @@ class UpdateClaimAdministrator(UpdateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = ClaimAdministratorContext(search, form)
+        context = ClaimAdministratorContext(self.request, form)
         context['update_active'] = True
         context['object_name'] = self.get_object().name
         return self.render_to_response(context)
@@ -1038,7 +1105,7 @@ class CreateDefenseLawFirm(CreateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = DefenseLawFirmContext(search, form)
+        context = DefenseLawFirmContext(self.request, form)
         context['create_active'] = True
         return self.render_to_response(context)
     
@@ -1055,7 +1122,7 @@ class UpdateDefenseLawFirm(UpdateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = DefenseLawFirmContext(search, form)
+        context = DefenseLawFirmContext(self.request, form)
         context['update_active'] = True
         context['object_name'] = self.get_object().name
         return self.render_to_response(context)
@@ -1132,7 +1199,7 @@ class CreateClient(CreateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = ClientContext(search, form)
+        context = ClientContext(self.request, form)
         context['create_active'] = True
         return self.render_to_response(context)
     
@@ -1149,7 +1216,7 @@ class UpdateClient(UpdateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = ClientContext(search, form)
+        context = ClientContext(self.request, form)
         context['update_active'] = True
         context['object_name'] = self.get_object().name
         return self.render_to_response(context)
@@ -1223,7 +1290,7 @@ class CreateClaimAdjuster(CreateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = ClaimAdjusterContext(search, form)
+        context = ClaimAdjusterContext(self.request, form)
         context['create_active'] = True
         return self.render_to_response(context)
     
@@ -1240,7 +1307,7 @@ class UpdateClaimAdjuster(UpdateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = ClaimAdjusterContext(search, form)
+        context = ClaimAdjusterContext(self.request, form)
         context['update_active'] = True
         context['object_name'] = self.get_object().name
         return self.render_to_response(context)
@@ -1316,7 +1383,7 @@ class CreateDefenseAttorney(CreateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = DefenseAttorneyContext(search, form)
+        context = DefenseAttorneyContext(self.request, form)
         context['create_active'] = True
         return self.render_to_response(context)
     
@@ -1333,7 +1400,7 @@ class UpdateDefenseAttorney(UpdateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = DefenseAttorneyContext(search, form)
+        context = DefenseAttorneyContext(self.request, form)
         context['update_active'] = True
         context['object_name'] = self.get_object().name
         return self.render_to_response(context)
@@ -1408,7 +1475,7 @@ class CreateDefenseAssistant(CreateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = DefenseAssistantContext(search, form)
+        context = DefenseAssistantContext(self.request, form)
         context['create_active'] = True
         return self.render_to_response(context)
     
@@ -1425,7 +1492,7 @@ class UpdateDefenseAssistant(UpdateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = DefenseAssistantContext(search, form)
+        context = DefenseAssistantContext(self.request, form)
         context['update_active'] = True
         context['object_name'] = self.get_object().name
         return self.render_to_response(context)
@@ -1502,7 +1569,7 @@ class CreateInjuryType(CreateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = InjuryTypeContext(search, form)
+        context = InjuryTypeContext(self.request, form)
         context['create_active'] = True
         return self.render_to_response(context)
     
@@ -1519,7 +1586,7 @@ class UpdateInjuryType(UpdateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = InjuryTypeContext(search, form)
+        context = InjuryTypeContext(self.request, form)
         context['update_active'] = True
         context['object_name'] = self.get_object().name
         return self.render_to_response(context)
@@ -1569,6 +1636,10 @@ def BodyPartContext(request, form_class=BodyPartForm(), return_query=True):
         Q(name__icontains=search) | 
         Q(id__icontains=search)
     )
+
+    if request.user.systemuser.role != "admin":
+        queryset = queryset.filter(active=True)
+
     context['items'] = queryset
 
     return context
@@ -1595,7 +1666,7 @@ class CreateBodyPart(CreateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = BodyPartContext(search, form)
+        context = BodyPartContext(self.request, form)
         context['create_active'] = True
         return self.render_to_response(context)
     
@@ -1612,7 +1683,7 @@ class UpdateBodyPart(UpdateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = BodyPartContext(search, form)
+        context = BodyPartContext(self.request, form)
         context['update_active'] = True
         context['object_name'] = self.get_object().name
         return self.render_to_response(context)
@@ -1702,7 +1773,7 @@ class CreateInjury(CreateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = InjuryContext(search, form)
+        context = InjuryContext(self.request, form)
         context['create_active'] = True
         context['body_parts'] = BodyPart.objects.filter(active=True)
         context['injury_types'] = InjuryType.objects.filter(active=True)
@@ -1727,7 +1798,7 @@ class UpdateInjury(UpdateView):
     
     def form_invalid(self, form):
         search = self.request.GET.get('search', '')
-        context = InjuryContext(search, form)
+        context = InjuryContext(self.request, form)
         context['update_active'] = True
         context['object_name'] = self.get_object().name  # Usa el método name()
         context['body_parts'] = BodyPart.objects.filter(active=True)

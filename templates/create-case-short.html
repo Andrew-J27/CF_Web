@@ -16,9 +16,7 @@
         <button class="tab-btn" data-tab="2">Case</button>
         <button class="tab-btn" data-tab="3">Injuries</button>
         <button class="tab-btn" data-tab="4">Employer</button>
-        <button class="tab-btn" data-tab="5">Insurance</button>
-        <button class="tab-btn" data-tab="6">Claim Admin</button>
-        <button class="tab-btn" data-tab="7">Defense Side</button>
+        <button class="tab-btn" data-tab="5">Insurance</button> 
     </div>
     <form method='POST' class="tab-content form">
         {% csrf_token %} 
@@ -164,12 +162,12 @@
                     {{ form.type.label_tag }}
                     {{ form.type }}
                     {% if form.type.errors %}{{ form.type.errors }}{% else %}<span></span>{% endif %}
-                    
+    
                     <span></span>
                     <button class="btn-delete-self" type="button">
                         <i class="fi fi-sr-trash"></i>
-                    </button> 
-                    {{ form.active }}
+                    </button>
+                    {{form.DELETE}}
                 </div>
                 {% endfor %} 
             </div>
@@ -201,169 +199,6 @@
                 {{ insurance_form.address.errors }}
             </div>
         </div>
-        <div class="tab-pane" data-tab="6" id="claim-pane">
-
-            <h2> Claim Administrator Information </h2>
-            <div class="form-field">
-                {{ claim_admin_form.name.label_tag }}
-                {{ claim_admin_form.name }}
-                {{ claim_admin_form.name.errors }}
-            </div>
-           <div class="form-field">
-                {{ claim_admin_form.address.label_tag }}
-                {{ claim_admin_form.address }}
-                {{ claim_admin_form.address.errors }}
-            </div>
-
-            <h2> Claim Adjuster Information </h2>
-
-            <div class="form-field">
-                {{ claim_adjuster_form.name.label_tag }}
-                {{ claim_adjuster_form.name }}
-                {{ claim_adjuster_form.name.errors }}
-            </div>
-
-            <h2>
-                Claim Adjuster contact methods
-                <button class="btn-add-contact" type="button">
-                    <i class="fi fi-sr-plus"></i> Add contact
-                </button>
-            </h2>
-
-            <div class="contacts-container" id="claim-adjuster-contacts-container">
-                {{claim_adjuster_contact_formset.management_form}}
-
-                {% for form in claim_adjuster_contact_formset.forms %} 
-                <div class="contact-item  ">
-                    {{ form.id }}
-
-                    {{ form.type.label_tag }}
-                    {{ form.type }}
-                    {% if form.type.errors %} {{ form.type.errors }} {% else %} <span></span> {% endif %}
-                    
-                    {{ form.value.label_tag }}
-                    {{ form.value }}
-                    {% if form.value.errors %} {{ form.value.errors }} {% else %} <span></span> {% endif %}
-
-                    {{ form.notes.label_tag }}
-                    {{ form.notes }}
-
-                    {% if forms.notes.errors %} {{forms.notes.errors}} {% else %} <span></span> {% endif %}
-                    {{ form.notes.errors }}
-                    
-                    <span></span>
-                    <button class="btn-delete-self" type="button">
-                        <i class="fi fi-sr-trash"></i>
-                    </button>
-                    {{form.active}}
-                </div>
-                {% endfor %} 
-            </div>
-        </div>
-
-
-        <div class="tab-pane" data-tab="7" id="defense-pane">
-            <h2> Defense Law firm Information</h2>
-            <div class="form-field">
-                {{ def_lawfirm_form.name.label_tag }}
-                {{ def_lawfirm_form.name }}
-                {{ def_lawfirm_form.name.errors }}
-            </div>
-            
-            <div class="form-field">
-                {{ def_lawfirm_form.address.label_tag }}
-                {{ def_lawfirm_form.address }}
-                {{ def_lawfirm_form.address.errors }}
-            </div>
-            
-            <h2> Def. Attorney Information </h2>
-
-            <div class="form-field">
-                {{ def_attorney_form.name.label_tag }}
-                {{ def_attorney_form.name }}
-                {{ def_attorney_form.name.errors }}
-            </div>
-
-            <h2>
-                Def. Attorney contact methods
-                <button class="btn-add-contact" type="button">
-                    <i class="fi fi-sr-plus"></i> Add contact
-                </button>
-            </h2>
-
-            <div class="contacts-container" id="def-attorney-contacts-container">
-                {{def_attorney_contact_formset.management_form}}
-
-                {% for form in def_attorney_contact_formset.forms %} 
-                <div class="contact-item  ">
-                    {{ form.id }}
-
-                    {{ form.type.label_tag }}
-                    {{ form.type }}
-                    {% if form.type.errors %} {{ form.type.errors }} {% else %} <span></span> {% endif %}
-                    
-                    {{ form.value.label_tag }}
-                    {{ form.value }}
-                    {% if form.value.errors %} {{ form.value.errors }} {% else %} <span></span> {% endif %}
-
-                    {{ form.notes.label_tag }}
-                    {{ form.notes }}
-
-                    {% if forms.notes.errors %} {{forms.notes.errors}} {% else %} <span></span> {% endif %}
-                    {{ form.notes.errors }}
-                    
-                    <span></span>
-                    <button class="btn-delete-self" type="button">
-                        <i class="fi fi-sr-trash"></i>
-                    </button>
-                    {{form.active}}
-                </div>
-                {% endfor %} 
-            </div> 
-
-            <h2> Def. Assistant Information </h2>
-            <div class="form-field"> 
-                {{ def_assistant_form.name.label_tag }}
-                {{ def_assistant_form.name }}
-                {{ def_assistant_form.name.errors }}
-            </div>
-
-            <h2>
-                Def. Assistant contact methods
-                <button class="btn-add-contact" type="button">
-                    <i class="fi fi-sr-plus"></i> Add contact
-                </button>
-            </h2>
-            <div class="contacts-container" id="def-assistant-contacts-container">
-                {{def_assistant_contact_formset.management_form}}
-
-                {% for form in def_assistant_contact_formset.forms %} 
-                <div class="contact-item  ">
-                    {{ form.id }}
-
-                    {{ form.type.label_tag }}
-                    {{ form.type }}
-                    {% if form.type.errors %} {{ form.type.errors }} {% else %} <span></span> {% endif %}
-                    
-                    {{ form.value.label_tag }}
-                    {{ form.value }}
-                    {% if form.value.errors %} {{ form.value.errors }} {% else %} <span></span> {% endif %}
-
-                    {{ form.notes.label_tag }}
-                    {{ form.notes }}
-
-                    {% if forms.notes.errors %} {{forms.notes.errors}} {% else %} <span></span> {% endif %}
-                    {{ form.notes.errors }}
-                    
-                    <span></span>
-                    <button class="btn-delete-self" type="button">
-                        <i class="fi fi-sr-trash"></i>
-                    </button>
-                    {{form.active}}
-                </div>
-                {% endfor %} 
-            </div> 
-        </div> 
     </form>
     <div class="tab-controls">
         <button class="btn-prev active"> 

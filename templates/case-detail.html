@@ -10,6 +10,17 @@
 
 <div class="detail">
 
+    <h2 class="detail-header"> 
+        {{case.name}} 
+        <span class="spacer"></span>
+        <a href="{% url 'update-case' case.id %}" class="update-btn">
+            <i class="fi fi-sr-pencil"></i>
+        </a>
+        <a href="{% url 'delete-case' case.id %}" class="delete-btn">
+            <i class="fi fi-sr-trash"></i>
+        </a>
+    </h2>
+
     <div class="card">
         <h2><i class="fi fi-sr-user"></i> Client Information</h2>
         <div class="card-content">
@@ -196,7 +207,7 @@
     <div class="card">
         <h2><i class="fi fi-sr-first-aid"></i> Injuries</h2>
         <div class="card-content">
-            {% if case.injuries.all %}
+            {% if active_injuries %}
                 <table class="injuries-table">
                     <thead>
                         <tr>
@@ -206,7 +217,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for injury in case.injuries.all %}
+                        {% for injury in active_injuries %}
                         <tr>
                             <td>{{ injury.date|date:"d-m-Y" }}</td>
                             <td>{{ injury.type.name|default:"-" }}</td>

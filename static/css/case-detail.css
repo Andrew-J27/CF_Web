@@ -58,3 +58,19 @@
 .card strong {
     gap: 10px;
 }
+
+h2.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    grid-column: 1/-1;
+    gap: 20px;
+    font-size: 1.8rem;
+}
+
+
+
+h2 a {
+    padding: 8px;
+    border: 1px solid gray;
+}

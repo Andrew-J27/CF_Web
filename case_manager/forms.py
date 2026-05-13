@@ -398,3 +398,161 @@ class SystemAssistantForm(forms.ModelForm):
             assistant.save()
         
         return assistant
+    
+
+
+# forms.py
+
+class SystemAttorneyUpdateForm(forms.ModelForm):
+    # Contraseña opcional
+    password = forms.CharField(
+        widget=forms.PasswordInput, 
+        required=False,
+        help_text="Dejar en blanco para mantener la contraseña actual"
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput, 
+        required=False
+    )
+    
+    class Meta:
+        model = Attorney
+        fields = ['name']  # Solo nombre es editable
+        exclude = ['active', 'user']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # El nombre es opcional en actualización
+        self.fields['name'].required = False
+        self.fields['name'].help_text = "Dejar en blanco para mantener el nombre actual"
+    
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        
+        # Si no hay nombre, no validar
+        if not name:
+            return name
+        
+        # Verificar si ya existe otro usuario con ese nombre
+        if SystemUser.objects.filter(username=name).exists():
+            # Permitir si es el mismo usuario
+            if self.instance and self.instance.user and self.instance.user.username == name:
+                return name
+            raise forms.ValidationError("Este nombre de usuario ya existe")
+        
+        return name
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        confirm_password = cleaned_data.get('confirm_password')
+        
+        # Solo validar si se proporcionó contraseña
+        if password or confirm_password:
+            if password != confirm_password:
+                raise forms.ValidationError("Las contraseñas no coinciden")
+            
+            if len(password) < 8:
+                raise forms.ValidationError("La contraseña debe tener al menos 8 caracteres")
+        
+        return cleaned_data
+    
+    def save(self, commit=True):
+        if not self.is_valid():
+            raise ValueError("El formulario no es válido")
+        
+        attorney = self.instance
+        name = self.cleaned_data.get('name')
+        password = self.cleaned_data.get('password')
+        
+        # Actualizar nombre si cambió
+        if name and name != attorney.name:
+            # Actualizar SystemUser
+            if attorney.user:
+                attorney.user.username = name
+                attorney.user.save()
+            
+            # Actualizar Attorney
+            attorney.name = name
+        
+        # Actualizar contraseña si se proporcionó
+        if password and attorney.user:
+            attorney.user.password = make_password(password)
+            attorney.user.save()
+        
+        if commit:
+            attorney.save()
+        
+        return attorney
+    
+
+class SystemAssistantUpdateForm(forms.ModelForm):
+    password = forms.CharField(
+        widget=forms.PasswordInput, 
+        required=False,
+        help_text="Leave blank to keep current password"
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput, 
+        required=False
+    )
+    
+    class Meta:
+        model = Assistant
+        fields = ['name']
+        exclude = ['active', 'user']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['name'].required = False
+        self.fields['name'].help_text = "Leave blank to keep current name"
+    
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        
+        if not name:
+            return name
+        
+        if SystemUser.objects.filter(username=name).exists():
+            if self.instance and self.instance.user and self.instance.user.username == name:
+                return name
+            raise forms.ValidationError("Username already exists")
+        
+        return name
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        confirm_password = cleaned_data.get('confirm_password')
+        
+        if password or confirm_password:
+            if password != confirm_password:
+                raise forms.ValidationError("Passwords don't match")
+            
+            if len(password) < 8:
+                raise forms.ValidationError("Password must be at least 8 characters")
+        
+        return cleaned_data
+    
+    def save(self, commit=True):
+        if not self.is_valid():
+            raise ValueError("Form invalid")
+        
+        assistant = self.instance
+        name = self.cleaned_data.get('name')
+        password = self.cleaned_data.get('password')
+        
+        if name and name != assistant.name:
+            if assistant.user:
+                assistant.user.username = name
+                assistant.user.save()
+            assistant.name = name
+        
+        if password and assistant.user:
+            assistant.user.password = make_password(password)
+            assistant.user.save()
+        
+        if commit:
+            assistant.save()
+        
+        return assistant

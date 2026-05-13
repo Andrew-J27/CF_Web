@@ -63,8 +63,7 @@ class DynamicInjuryFormset {
                     
                     // Desactivar campos visualmente
                     injuryItem.querySelectorAll('input, select, textarea, button').forEach(field => {
-                        if (!field.matches(this.deleteSelfBtnSelector)) {
-                            field.disabled = true;
+                        if (!field.matches(this.deleteSelfBtnSelector)) { 
                             field.readOnly = true;
                         }
                     });
@@ -77,8 +76,7 @@ class DynamicInjuryFormset {
                     activeCheckbox.checked = true; // true = activo
                     
                     // Reactivar campos
-                    injuryItem.querySelectorAll('input, select, textarea, button').forEach(field => {
-                        field.disabled = false;
+                    injuryItem.querySelectorAll('input, select, textarea, button').forEach(field => { 
                         field.readOnly = false;
                     });
                     
