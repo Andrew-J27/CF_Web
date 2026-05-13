@@ -292,14 +292,11 @@ class SystemAttorneyForm(forms.ModelForm):
     
     class Meta:
         model = Attorney
-        fields = ['name']  # Solo el campo name del modelo
+        fields = ['name']
         exclude = ['active', 'user']
     
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Cambiar la etiqueta del campo name para que sea más claro
-        self.fields['name'].label = "Nombre de usuario / Nombre del abogado"
-        self.fields['name'].help_text = "Este nombre se usará tanto para el usuario como para el abogado"
+        super().__init__(*args, **kwargs) 
     
     def clean_name(self):
         name = self.cleaned_data.get('name')
@@ -307,9 +304,7 @@ class SystemAttorneyForm(forms.ModelForm):
             raise forms.ValidationError("Este nombre de usuario ya existe")
         return name
     
-    def clean(self):
-
-        print("se  intenta")
+    def clean(self): 
         cleaned_data = super().clean()
         password = cleaned_data.get('password')
         confirm_password = cleaned_data.get('confirm_password')
@@ -346,3 +341,60 @@ class SystemAttorneyForm(forms.ModelForm):
             attorney.save()
         
         return attorney
+    
+
+class SystemAssistantForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput, required=True)
+    confirm_password = forms.CharField(widget=forms.PasswordInput, required=True)
+    
+    class Meta:
+        model = Assistant
+        fields = ['name']
+        exclude = ['active', 'user']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs) 
+    
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name and SystemUser.objects.filter(username=name).exists():
+            raise forms.ValidationError("User already exists")
+        return name
+    
+    def clean(self): 
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        confirm_password = cleaned_data.get('confirm_password')
+        
+        if password and confirm_password and password != confirm_password:
+            raise forms.ValidationError("Passwords don't match")
+        
+        return cleaned_data
+    
+    def save(self, commit=True):
+        if not self.is_valid():
+            raise ValueError("Form invalid")
+        
+        # Usar el mismo 'name' como username
+        username = self.cleaned_data['name']
+        
+        try:
+            user = SystemUser.objects.create(
+                username=username,
+                password=make_password(self.cleaned_data['password']),
+                role='assistant',
+                active=True
+            )
+        except Exception as e:
+            print(f'Error al crear SystemUser: {e}')
+            raise
+        
+        # Crear el Attorney asociado
+        assistant = super().save(commit=False)
+        assistant.user = user
+        assistant.name = username  # Aseguramos que coincidan
+        
+        if commit:
+            assistant.save()
+        
+        return assistant

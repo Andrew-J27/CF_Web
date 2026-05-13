@@ -13,8 +13,7 @@
 
 {% block main %}
 <div class="show-container">
-
-    <form class="search" method="GET" action="{% url 'status' %}">
+    <form class="search" method="GET" action="{% url list_url %}">
         <h2 class="model-name">{{name}}</h2> 
         <span class="spacer"></span>
         
@@ -23,8 +22,13 @@
             <i class="fi fi-br-cross"></i>
         </button>
         {% endif %}
+        
         <input type="text" class="search" name="search" value="{{search}}" placeholder="Search {{name}}" columns="20">
         
+        <!-- Used in list cases -->
+        {% block filter %}      
+        {% endblock filter %}
+
         <button>
             <i class="fi fi-br-search"></i> 
         </button>
@@ -94,7 +98,7 @@
 
         <div class="dialog__buttons">
             <a class="btn-close-modal" type="button"
-                {% if create_active %}href="{% url 'status' %}"{% endif %}>  
+                {% if create_active %}href="{% url list_url %}"{% endif %}>  
                 <i class="fi fi-br-cross"></i> Cancel
             </a>
 
@@ -123,7 +127,7 @@
 
         <div class="dialog__buttons">
             <a class="btn-close-modal" type="button"
-                {% if update_active %}href="{% url 'status' %}"{% endif %}> 
+                {% if update_active %}href="{% url list_url %}"{% endif %}> 
                 <i class="fi fi-br-cross"></i> Cancel
             </a>
 
@@ -142,7 +146,7 @@
 
         <div class="dialog__buttons">
             <a class="btn-close-modal" type="button"
-                {% if delete_active %}href="{% url 'status' %}"{% endif %}>  
+                {% if delete_active %}href="{% url list_url %}"{% endif %}>  
                 <i class="fi fi-br-cross"></i> Cancel
             </a>
 
@@ -161,7 +165,7 @@
 
         <div class="dialog__buttons">
             <a class="btn-close-modal" type="button"
-                {% if restore_active %}href="{% url 'status' %}"{% endif %}> 
+                {% if restore_active %}href="{% url list_url %}"{% endif %}> 
                 <i class="fi fi-br-cross"></i> Cancel
             </a>
             <button>

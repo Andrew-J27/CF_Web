@@ -12,19 +12,30 @@
 {% endblock attributes %}
 
 {% block create_form %}
+{% for field in form %}
 <div class="form-field">
-    {{form.name.label_tag}}
-    {{form.name}}
-    {{form.name.errors}}
+    {{field.label_tag}}
+    {{field}}
+    {{field.errors}}
 </div>
+{% endfor %}
+{% if form.non_field_errors %}
+    <ul class="errorlist">
+        {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>  <!-- Aquí aparece "Passwords don't match" -->
+        {% endfor %}
+    </ul>
+{% endif %}
 {% endblock create_form %}
 
 {% block update_form %}
+{% for field in form %}
 <div class="form-field">
-    {{form.name.label_tag}}
-    {{form.name}}
-    {{form.name.errors}}
+    {{field.label_tag}}
+    {{field}}
+    {{field.errors}}
 </div>
+{% endfor %}
 {% endblock update_form %}
 
 {% block create_url %}{% url "create-assistant" %}{% endblock %}

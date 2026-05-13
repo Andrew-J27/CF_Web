@@ -74,21 +74,21 @@ class Client(BaseModel):
         db_table = 'client' 
     
 class Employer(BaseModel):
-    name = m.CharField(max_length=50, unique=True)
+    name = m.CharField(max_length=100, unique=True)
     address = m.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
         db_table = 'employer' 
 
 class InsuranceCarrier(BaseModel):
-    name = m.CharField(max_length=50, unique=True)
+    name = m.CharField(max_length=100, unique=True)
     address = m.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
         db_table = 'insurance_carrier'
 
 class ClaimAdministrator(BaseModel):
-    name = m.CharField(max_length=50, unique=True)
+    name = m.CharField(max_length=100, unique=True)
     address = m.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
@@ -101,7 +101,7 @@ class ClaimAdjuster(BaseModel):
         db_table = 'claim_adjuster' 
 
 class DefenseLawFirm(BaseModel):
-    name = m.CharField(max_length=50, unique=True)
+    name = m.CharField(max_length=100, unique=True)
     address = m.CharField(max_length=100, null=True, blank=True)
 
     class Meta:

@@ -61,7 +61,9 @@ class Home(View):
 
         return render(request, 'home.html', {'sysuser':system_user, 'role':user_role}) 
 
-def CaseContext(search, form_class=CaseForm(), return_query=True):
+
+def CaseContext(request, form_class=CaseForm(), return_query=True): 
+    search = request.GET.get('search')
     if not search: search = ""
 
     context = {
@@ -76,12 +78,10 @@ def CaseContext(search, form_class=CaseForm(), return_query=True):
         return context
     
     queryset = Case.objects.filter(Q(client__name__icontains=search) | Q(employer__name__icontains=search))
+ 
     context['items'] = queryset
 
-    
-
     return context
-
 
 class CreateCase(View):
 
@@ -424,7 +424,6 @@ class UpdateCase(View):
         }
         return render(request, 'create-case.html', context)
 
-
 class DetailCase(DetailView):
     model = Case
     template_name = 'case-detail.html'
@@ -433,7 +432,6 @@ class DetailCase(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         return context  
-
 
 class ListCases(ListView):
     model = Case
@@ -444,8 +442,9 @@ class ListCases(ListView):
         context = super().get_context_data(**kwargs)
         search_value = self.request.GET.get('search') 
         
-        added_context = CaseContext(search_value)
+        added_context = CaseContext(self.request)
         context['detail_url'] = True
+        context['list_url'] = 'case'
         return context | added_context 
 
 
@@ -456,16 +455,16 @@ class DeleteCase(View):
         case.soft_delete()
 
         return redirect('case')
-
-
 # MODELS CRUD
 
-def CaseStatusContext(search, form_class=CaseStatusForm(), return_query=True):
+def CaseStatusContext(request, form_class=CaseStatusForm(), return_query=True): 
+    search = request.GET.get('search')
     if not search: search = ""
 
     context = {
         'name':'Case Status',
         'form':form_class,
+        'list_url':'status',
         'search':search,
         'create_active':False,
         'update_active':False,
@@ -491,7 +490,7 @@ class ListCaseStatus(ListView):
         context = super().get_context_data(**kwargs)
         search_value = self.request.GET.get('search') 
         
-        added_context = CaseStatusContext(search_value)
+        added_context = CaseStatusContext(self.request)
         return context | added_context 
 
 @method_decorator(login_required, name='dispatch')    
@@ -542,13 +541,15 @@ class RestoreStatus(View):
         return redirect('status')
 
 # Contexto para Attorney
-def AttorneyContext(search, form_class=SystemAttorneyForm(), return_query=True):
+def AttorneyContext(request, form_class=SystemAttorneyForm(), return_query=True):
+    search = request.GET.get('search')
     if not search: 
         search = ""
 
     context = {
         'name': 'Attorney',
         'form': form_class,
+        'list_url':'attorney',
         'search': search,
         'create_active': False,
         'update_active': False,
@@ -576,7 +577,7 @@ class ListAttorney(ListView):
         context = super().get_context_data(**kwargs)
         search_value = self.request.GET.get('search', '')
         
-        added_context = AttorneyContext(search_value)
+        added_context = AttorneyContext(self.request)
         return context | added_context
 
 @method_decorator(login_required, name='dispatch')    
@@ -595,7 +596,7 @@ class CreateAttorney(CreateView):
 @method_decorator(login_required, name='dispatch')
 class UpdateAttorney(UpdateView):
     model = Attorney
-    form_class = AttorneyForm
+    form_class = SystemAttorneyForm
     success_url = reverse_lazy('attorney')
     template_name = 'show/show-attorney.html'
     
@@ -622,13 +623,15 @@ class RestoreAttorney(View):
     
 
 # Contexto para Assistant
-def AssistantContext(search, form_class=AssistantForm(), return_query=True):
+def AssistantContext(request, form_class=SystemAssistantForm(), return_query=True):
+    search = request.GET.get('search') 
     if not search: 
         search = ""
 
     context = {
         'name': 'Assistant',
         'form': form_class,
+        'list_url':'assistant',
         'search': search,
         'create_active': False,
         'update_active': False,
@@ -656,14 +659,13 @@ class ListAssistant(ListView):
         context = super().get_context_data(**kwargs)
         search_value = self.request.GET.get('search', '')
         
-        added_context = AssistantContext(search_value)
+        added_context = AssistantContext(self.request)
         return context | added_context
-
 
 @method_decorator(login_required, name='dispatch')
 class CreateAssistant(CreateView):
     model = Assistant
-    form_class = AssistantForm
+    form_class = SystemAssistantForm
     success_url = reverse_lazy('assistant')  # Asumiendo que usas 'assistant' como nombre de URL
     template_name = 'show/show-assistant.html'
     
@@ -677,11 +679,10 @@ class CreateAssistant(CreateView):
         messages.success(self.request, 'Assistant creado exitosamente')
         return super().form_valid(form)
 
-
 @method_decorator(login_required, name='dispatch')
 class UpdateAssistant(UpdateView):
     model = Assistant
-    form_class = AssistantForm
+    form_class = SystemAssistantForm
     success_url = reverse_lazy('assistant')
     template_name = 'show/show-assistant.html'
     
@@ -710,14 +711,15 @@ class RestoreAssistant(View):
         assistant.restore()
         return redirect('assistant')
     
-
-def EmployerContext(search, form_class=EmployerForm(), return_query=True):
+def EmployerContext(request, form_class=EmployerForm(), return_query=True):
+    search = request.GET.get('search')
     if not search: 
         search = ""
 
     context = {
         'name': 'Employer',
         'form': form_class,
+        'list_url':'employer',
         'search': search,
         'create_active': False,
         'update_active': False,
@@ -747,7 +749,7 @@ class ListEmployer(ListView):
         context = super().get_context_data(**kwargs)
         search_value = self.request.GET.get('search', '')
         
-        added_context = EmployerContext(search_value)
+        added_context = EmployerContext(self.request)
         return context | added_context
 
 @method_decorator(login_required, name='dispatch')
@@ -791,13 +793,15 @@ class RestoreEmployer(View):
         employer.restore()
         return redirect('employer')
     
-def InsuranceCarrierContext(search, form_class=InsuranceCarrierForm(), return_query=True):
+def InsuranceCarrierContext(request, form_class=InsuranceCarrierForm(), return_query=True):
+    search = request.GET.get('search')
     if not search: 
         search = ""
 
     context = {
         'name': 'Insurance Carrier',
         'form': form_class,
+        'list_url':'insurance-carrier',
         'search': search,
         'create_active': False,
         'update_active': False,
@@ -827,7 +831,7 @@ class ListInsuranceCarrier(ListView):
         context = super().get_context_data(**kwargs)
         search_value = self.request.GET.get('search', '')
         
-        added_context = InsuranceCarrierContext(search_value)
+        added_context = InsuranceCarrierContext(self.request)
         return context | added_context
 
 
@@ -887,13 +891,15 @@ class RestoreInsuranceCarrier(View):
     
 
 
-def ClaimAdministratorContext(search, form_class=ClaimAdministratorForm(), return_query=True):
+def ClaimAdministratorContext(request, form_class=ClaimAdministratorForm(), return_query=True):
+    search = request.GET.get('search')
     if not search: 
         search = ""
 
     context = {
         'name': 'Claim Administrator',
         'form': form_class,
+        'list_url':'claim-administrator',
         'search': search,
         'create_active': False,
         'update_active': False,
@@ -923,7 +929,7 @@ class ListClaimAdministrator(ListView):
         context = super().get_context_data(**kwargs)
         search_value = self.request.GET.get('search', '')
         
-        added_context = ClaimAdministratorContext(search_value)
+        added_context = ClaimAdministratorContext(self.request)
         return context | added_context
 
 
@@ -982,13 +988,15 @@ class RestoreClaimAdministrator(View):
     
 
 # DEFENSE LAW FIRM
-def DefenseLawFirmContext(search, form_class=DefenseLawFirmForm(), return_query=True):
+def DefenseLawFirmContext(request, form_class=DefenseLawFirmForm(), return_query=True):
+    search = request.GET.get('search')
     if not search: 
         search = ""
 
     context = {
         'name': 'Defense Law Firm',
         'form': form_class,
+        'list_url':'defense-law-firm',
         'search': search,
         'create_active': False,
         'update_active': False,
@@ -1018,7 +1026,7 @@ class ListDefenseLawFirm(ListView):
         context = super().get_context_data(**kwargs)
         search_value = self.request.GET.get('search', '')
         
-        added_context = DefenseLawFirmContext(search_value)
+        added_context = DefenseLawFirmContext(self.request)
         return context | added_context
 
 @method_decorator(login_required, name='dispatch')
@@ -1073,13 +1081,15 @@ class RestoreDefenseLawFirm(View):
         return redirect('defense-law-firm')
     
 
-def ClientContext(search, form_class=ClientForm(), return_query=True):
+def ClientContext(request, form_class=ClientForm(), return_query=True):
+    search = request.GET.get('search')
     if not search: 
         search = ""
 
     context = {
         'name': 'Client',
         'form': form_class,
+        'list_url':'client',
         'search': search,
         'create_active': False,
         'update_active': False,
@@ -1110,7 +1120,7 @@ class ListClient(ListView):
         context = super().get_context_data(**kwargs)
         search_value = self.request.GET.get('search', '')
         
-        added_context = ClientContext(search_value)
+        added_context = ClientContext(self.request)
         return context | added_context
 
 @method_decorator(login_required, name='dispatch')
@@ -1164,13 +1174,15 @@ class RestoreClient(View):
         messages.success(request, 'Client restaurado exitosamente')
         return redirect('client')
 
-def ClaimAdjusterContext(search, form_class=ClaimAdjusterForm(), return_query=True):
+def ClaimAdjusterContext(request, form_class=ClaimAdjusterForm(), return_query=True):
+    search = request.GET.get('search')
     if not search: 
         search = ""
 
     context = {
         'name': 'Claim Adjuster',
         'form': form_class,
+        'list_url':'claim-adjuster',
         'search': search,
         'create_active': False,
         'update_active': False,
@@ -1199,7 +1211,7 @@ class ListClaimAdjuster(ListView):
         context = super().get_context_data(**kwargs)
         search_value = self.request.GET.get('search', '')
         
-        added_context = ClaimAdjusterContext(search_value)
+        added_context = ClaimAdjusterContext(self.request)
         return context | added_context
 
 @method_decorator(login_required, name='dispatch')
@@ -1255,13 +1267,15 @@ class RestoreClaimAdjuster(View):
     
 
 
-def DefenseAttorneyContext(search, form_class=DefenseAttorneyForm(), return_query=True):
+def DefenseAttorneyContext(request, form_class=DefenseAttorneyForm(), return_query=True):
+    search = request.GET.get('search')
     if not search: 
         search = ""
 
     context = {
         'name': 'Defense Attorney',
         'form': form_class,
+        'list_url':'defense-attorney',
         'search': search,
         'create_active': False,
         'update_active': False,
@@ -1290,7 +1304,7 @@ class ListDefenseAttorney(ListView):
         context = super().get_context_data(**kwargs)
         search_value = self.request.GET.get('search', '')
         
-        added_context = DefenseAttorneyContext(search_value)
+        added_context = DefenseAttorneyContext(self.request)
         return context | added_context
 
 @method_decorator(login_required, name='dispatch')
@@ -1345,13 +1359,15 @@ class RestoreDefenseAttorney(View):
         return redirect('defense-attorney')
 
 
-def DefenseAssistantContext(search, form_class=DefenseAssistantForm(), return_query=True):
+def DefenseAssistantContext(request, form_class=DefenseAssistantForm(), return_query=True):
+    search = request.GET.get('search')
     if not search: 
         search = ""
 
     context = {
         'name': 'Defense Assistant',
         'form': form_class,
+        'list_url':'defense-assistant',
         'search': search,
         'create_active': False,
         'update_active': False,
@@ -1380,7 +1396,7 @@ class ListDefenseAssistant(ListView):
         context = super().get_context_data(**kwargs)
         search_value = self.request.GET.get('search', '')
         
-        added_context = DefenseAssistantContext(search_value)
+        added_context = DefenseAssistantContext(self.request)
         return context | added_context
 
 @method_decorator(login_required, name='dispatch')
@@ -1436,13 +1452,15 @@ class RestoreDefenseAssistant(View):
     
 
 # InjuryType Context
-def InjuryTypeContext(search, form_class=InjuryTypeForm(), return_query=True):
+def InjuryTypeContext(request, form_class=InjuryTypeForm(), return_query=True):
+    search = request.GET.get('search')
     if not search: 
         search = ""
 
     context = {
         'name': 'Injury Type',
         'form': form_class,
+        'list_url':'injury-type',
         'search': search,
         'create_active': False,
         'update_active': False,
@@ -1472,7 +1490,7 @@ class ListInjuryType(ListView):
         context = super().get_context_data(**kwargs)
         search_value = self.request.GET.get('search', '')
         
-        added_context = InjuryTypeContext(search_value)
+        added_context = InjuryTypeContext(self.request)
         return context | added_context
 
 @method_decorator(login_required, name='dispatch')
@@ -1528,13 +1546,15 @@ class RestoreInjuryType(View):
 
 
 # BodyPart Context
-def BodyPartContext(search, form_class=BodyPartForm(), return_query=True):
+def BodyPartContext(request, form_class=BodyPartForm(), return_query=True):
+    search = request.GET.get('search')
     if not search: 
         search = ""
 
     context = {
         'name': 'Body Part',
         'form': form_class,
+        'list_url':'body-part',
         'search': search,
         'create_active': False,
         'update_active': False,
@@ -1563,7 +1583,7 @@ class ListBodyPart(ListView):
         context = super().get_context_data(**kwargs)
         search_value = self.request.GET.get('search', '')
         
-        added_context = BodyPartContext(search_value)
+        added_context = BodyPartContext(self.request)
         return context | added_context
 
 @method_decorator(login_required, name='dispatch')
@@ -1618,13 +1638,15 @@ class RestoreBodyPart(View):
         return redirect('body-part')
 
 # Injury Context (especial)
-def InjuryContext(search, form_class=InjuryForm(), return_query=True):
+def InjuryContext(request, form_class=InjuryForm(), return_query=True):
+    search = request.GET.get('search')
     if not search: 
         search = ""
 
     context = {
         'name': 'Injury',
         'form': form_class,
+        'list_url':'injury',
         'search': search,
         'create_active': False,
         'update_active': False,
@@ -1657,7 +1679,7 @@ class ListInjury(ListView):
         context = super().get_context_data(**kwargs)
         search_value = self.request.GET.get('search', '')
         
-        added_context = InjuryContext(search_value)
+        added_context = InjuryContext(self.request)
         
         # Agregar opciones para selects en form
         added_context['body_parts'] = BodyPart.objects.filter(active=True)
