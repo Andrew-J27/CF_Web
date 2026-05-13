@@ -1,0 +1,37 @@
+{% extends "show/show-generic.html" %}
+{% load static %}
+
+{% block labels %}
+<th>ID</th>
+<th>Status name</th>
+{% endblock labels %}
+
+{% block attributes %}
+<td data-field="id">{{item.id}}</td>
+<td data-field="name">{{item.name}}</td>
+{% endblock attributes %}
+
+{% block create_form %}
+<div class="form-field">
+    {{form.name.label_tag}}
+    {{form.name}}
+    {{form.name.errors}}
+</div>
+{% endblock create_form %}
+
+{% block update_form %}
+<div class="form-field">
+    {{form.name.label_tag}}
+    {{form.name}}
+    {{form.name.errors}}
+</div>
+{% endblock update_form %}
+
+
+{% block create_url %} {% url "create-status" %} {% endblock create_url %}
+
+{% block update_url %} {% url "update-status" 0 %} {% endblock update_url %}
+
+{% block delete_url %} {% url "delete-status" 0 %} {% endblock delete_url %}
+
+{% block restore_url %} {% url "restore-status" 0 %} {% endblock restore_url %}

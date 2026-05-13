@@ -1,0 +1,71 @@
+{% extends "show/show-generic.html" %}
+{% load static %}
+
+{% block labels %}
+<th>ID</th>
+<th>Case ID</th>
+<th>Date</th>
+<th>Body Part</th>
+<th>Injury Type</th>
+<th>Description</th>
+{% endblock labels %}
+
+{% block attributes %}
+<td data-field="id">{{item.id}}</td>
+<td data-field="case">{{item.case.id}}</td>
+<td data-field="date">{{item.date|date:"Y-m-d"}}</td>
+<td data-field="part">{{item.part.name}}</td>
+<td data-field="type">{{item.type.name}}</td>
+<td data-field="name">{{item.name}}</td>
+{% endblock attributes %}
+
+{% block create_form %}
+<div class="form-field">
+    {{form.case.label_tag}}
+    {{form.case}}
+    {{form.case.errors}}
+</div>
+<div class="form-field">
+    {{form.date.label_tag}}
+    {{form.date}}
+    {{form.date.errors}}
+</div>
+<div class="form-field">
+    {{form.part.label_tag}}
+    {{form.part}}
+    {{form.part.errors}}
+</div>
+<div class="form-field">
+    {{form.type.label_tag}}
+    {{form.type}}
+    {{form.type.errors}}
+</div>
+{% endblock create_form %}
+
+{% block update_form %}
+<div class="form-field">
+    {{form.case.label_tag}}
+    {{form.case}}
+    {{form.case.errors}}
+</div>
+<div class="form-field">
+    {{form.date.label_tag}}
+    {{form.date}}
+    {{form.date.errors}}
+</div>
+<div class="form-field">
+    {{form.part.label_tag}}
+    {{form.part}}
+    {{form.part.errors}}
+</div>
+<div class="form-field">
+    {{form.type.label_tag}}
+    {{form.type}}
+    {{form.type.errors}}
+</div>
+{% endblock update_form %}
+
+{% block create_url %}{% url "create-injury" %}{% endblock %}
+{% block update_url %}{% url "update-injury" 0 %}{% endblock %}
+{% block delete_url %}{% url "delete-injury" 0 %}{% endblock %}
+{% block restore_url %}{% url "restore-injury" 0 %}{% endblock %}

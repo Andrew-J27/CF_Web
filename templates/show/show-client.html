@@ -1,0 +1,69 @@
+{% extends "show/show-generic.html" %}
+{% load static %}
+
+{% block labels %}
+<th>ID</th>
+<th>Client Name</th>
+<th>Address</th>
+<th>SSN</th>
+<th>Birth Date</th>
+{% endblock labels %}
+
+{% block attributes %}
+<td data-field="id">{{item.id}}</td>
+<td data-field="name">{{item.name}}</td>
+<td data-field="address">{{item.address|default:"-"}}</td>
+<td data-field="ssn">{{item.ssn|default:"-"}}</td>
+<td data-field="birth">{{item.birth|default:"-" }}</td>
+{% endblock attributes %}
+
+{% block create_form %}
+<div class="form-field">
+    {{form.name.label_tag}}
+    {{form.name}}
+    {{form.name.errors}}
+</div>
+<div class="form-field">
+    {{form.address.label_tag}}
+    {{form.address}}
+    {{form.address.errors}}
+</div>
+<div class="form-field">
+    {{form.ssn.label_tag}}
+    {{form.ssn}}
+    {{form.ssn.errors}}
+</div>
+<div class="form-field">
+    {{form.birth.label_tag}}
+    {{form.birth}}
+    {{form.birth.errors}}
+</div>
+{% endblock create_form %}
+
+{% block update_form %}
+<div class="form-field">
+    {{form.name.label_tag}}
+    {{form.name}}
+    {{form.name.errors}}
+</div>
+<div class="form-field">
+    {{form.address.label_tag}}
+    {{form.address}}
+    {{form.address.errors}}
+</div>
+<div class="form-field">
+    {{form.ssn.label_tag}}
+    {{form.ssn}}
+    {{form.ssn.errors}}
+</div>
+<div class="form-field">
+    {{form.birth.label_tag}}
+    {{form.birth}}
+    {{form.birth.errors}}
+</div>
+{% endblock update_form %}
+
+{% block create_url %}{% url "create-client" %}{% endblock %}
+{% block update_url %}{% url "update-client" 0 %}{% endblock %}
+{% block delete_url %}{% url "delete-client" 0 %}{% endblock %}
+{% block restore_url %}{% url "restore-client" 0 %}{% endblock %}

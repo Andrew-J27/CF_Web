@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block link %}
+<link rel="stylesheet" href="{% static "css/table.css" %}">
+<link rel="stylesheet" href="{% static "css/show-generic.css" %}">
+<link rel="stylesheet" href="{% static "css/report.css" %}">
+{% endblock link %}
+
+{% block main %}
+<div class="show-container">
+
+    <form class="dates search" method="GET" action="{% url 'report' %}">
+        <h2 class="model-name">Case Report {{request.user.username}}</h2> 
+        <span class="spacer"></span>
+        
+        <label> Start Date:
+            <input type="date" name="start_date" value="{{ start_date|default:'' }}">
+        </label>
+        <span> - </span>
+        <label> End Date:
+            <input type="date" name="end_date" value="{{ end_date|default:'' }}">
+        </label>
+        
+        {% comment "" %}
+        <label> Attorney:
+            <select name="attorney">
+                <option value="">All Attorneys</option>
+                {% for attorney in attorneys %}
+                <option value="{{ attorney.id }}" {% if selected_attorney == attorney.id|stringformat:"s" %}selected{% endif %}>
+                    {{ attorney.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </label>
+        
+        <label> Status:
+            <select name="status">
+                <option value="">All Statuses</option>
+                {% for case_status in case_statuses %}
+                <option value="{{ case_status.id }}" {% if selected_status == case_status.id|stringformat:"s" %}selected{% endif %}>
+                    {{ case_status.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </label>
+        {% endcomment %}
+        
+        <button type="submit">
+            <i class="fi fi-br-search"></i> Filter
+        </button>
+        
+        <button type="submit" name="export" value="1">
+            <i class="fi fi-sr-file-excel"></i> Export to Excel
+        </button>
+    </form>
+
+    <div class="show">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Client Name</th>
+                    <th>Date Assigned</th>
+                    <th>Attorney</th>
+                    <th>Assistant</th>
+                    <th>Case Status</th>
+                    <th>Details Registered</th>
+                    <th>ADJ Filed</th>
+                    <th>Dropped / Sub'd Out</th>
+                    <th>Settled</th>
+                    <th>Source</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr class="{% cycle 'row-even' 'row-odd' %}">
+                    <td>{{ item.client.name }}</td>
+                    <td>{{ item.date_assigned|date:"Y-m-d"|default:"—" }}</td>
+                    <td>{{ item.attorney.name|default:"—" }}</td>
+                    <td>{{ item.assistant.name|default:"—" }}</td>
+                    <td>
+                        <span class="status-badge status-{{ item.status.name|lower|slugify }}">
+                            {{ item.status.name }}
+                        </span>
+                    </td>
+                    <td class="checkbox-cell">
+                        {% if item.claim_num %}
+                        <i class="fi fi-sr-check-circle checked"></i>
+                        {% else %}
+                        <i class="fi fi-sr-circle unchecked"></i>
+                        {% endif %}
+                    </td>
+                    <td class="checkbox-cell">
+                        {% if item.adj_date %}
+                        <i class="fi fi-sr-check-circle checked"></i>
+                        {% else %}
+                        <i class="fi fi-sr-circle unchecked"></i>
+                        {% endif %}
+                    </td>
+                    <td class="checkbox-cell">
+                        {% if not item.active %}
+                        <i class="fi fi-sr-check-circle checked"></i>
+                        {% else %}
+                        <i class="fi fi-sr-circle unchecked"></i>
+                        {% endif %}
+                    </td>
+                    <td class="checkbox-cell">
+                        {% if item.settlement_date %}
+                        <i class="fi fi-sr-check-circle checked"></i>
+                        {% else %}
+                        <i class="fi fi-sr-circle unchecked"></i>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.source|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="empty-message">
+                        No cases found matching the criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+    </div>
+    {% if items %}
+    <div class="report-summary">
+        <p>Total Cases: {{ items|length }}</p>
+        <p>Settled: {{ items|length|yesno:"0,0" }}{# You can add real counts with context variables #}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock main %}

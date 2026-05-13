@@ -1,9 +1,8 @@
-from django.db import models
+from django.db import models as m
 from django.contrib.auth.models import User
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericRelation
+from datetime import date
 
+# Create your models here.
 class SystemUser(User):
     ROLES = [
         ('admin','Admin'),
@@ -11,8 +10,8 @@ class SystemUser(User):
         ('assistant', 'Assistant')
     ]
 
-    visible = models.BooleanField(default=True)
-    role = models.CharField(max_length=20, choices=ROLES)
+    active = m.BooleanField(default=True)
+    role = m.CharField(max_length=20, choices=ROLES, default='admin')
 
     class Meta:
         db_table = 'system_user'
@@ -20,186 +19,143 @@ class SystemUser(User):
     def __str__(self):
         return self.username
     
-class BaseModel(models.Model):
-    visible = models.BooleanField(default=True)
+    def soft_delete(self):
+        self.active = False
+        self.save()
+    
+    def restore(self): 
+        self.active = True
+        self.save()
+    
+class BaseModel(m.Model):
+    active = m.BooleanField(default=True)
 
     class Meta:
         abstract = True
 
-class CaseStatus(BaseModel): # Catalog of statuses
-    name = models.CharField(max_length=50)
+    def __str__(self):
+        return self.name
+
+    def soft_delete(self):
+        self.active = False
+        self.save()
+    
+    def restore(self): 
+        self.active = True
+        self.save()
+
+class CaseStatus(BaseModel):
+    name = m.CharField(max_length=50, unique=True)
 
     class Meta:
         db_table = 'case_status'
 
-    def __str__(self):
-        return self.name
-    
-class BodyPart(BaseModel): # Catalog
-    name = models.CharField(max_length=50)
-
-    class Meta:
-        db_table = 'body_part'
-
-    def __str__(self):
-        return self.name
-
-class InjuryType(BaseModel): # Catalog
-    name = models.CharField(max_length=50)
-
-    class Meta:
-        db_table = 'injury_type'
-
-    def __str__(self):
-        return self.name
-    
-class Contact(BaseModel):
-    CONTACT_TYPES = [
-        ('email','Email'),
-        ('phone','Phone'),
-        ('fax', 'Fax')
-    ]
-
-    contact_type = models.CharField(max_length=50, choices=CONTACT_TYPES)
-    value = models.CharField(max_length=100)
-    notes = models.CharField(max_length=100, null=True, blank=True)
-
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
-
-    class Meta:
-        db_table = 'contact'
-
-    def __str__(self):
-        return f"{self.value}"
-    
-
 class Attorney(BaseModel):
-    name = models.CharField(max_length=50)
-    user = models.ForeignKey(SystemUser, on_delete=models.CASCADE, null=True, related_name='attorney')    
+    name = m.CharField(max_length=50, unique=True)
+    user = m.OneToOneField(SystemUser, on_delete=m.CASCADE, related_name='attorney')
 
     class Meta:
         db_table = 'attorney'
-
-    def __str__(self):
-        return self.name
-
+     
 class Assistant(BaseModel):
-    name = models.CharField(max_length=50)
-    user = models.ForeignKey(SystemUser, on_delete=models.CASCADE, null=True, related_name='assistant')
+    name = m.CharField(max_length=50, unique=True)
+    user = m.OneToOneField(SystemUser, on_delete=m.CASCADE, related_name='assistant')
 
     class Meta:
         db_table = 'assistant'
 
-    def __str__(self):
-        return self.name
-    
 class Client(BaseModel):
-    name = models.CharField(max_length=100)
-    address = models.CharField(max_length=100, null=True, blank=True)
-    ssn = models.CharField(max_length=50)
-    birth_date = models.DateField(null=True, blank=True)
-    contacts = GenericRelation(Contact, related_query_name='client')
+    name = m.CharField(max_length=50, blank=False)
+    address = m.CharField(max_length=100, null=True, blank=True)
+    ssn = m.CharField(max_length=30, null=True, blank=True)
+    birth = m.DateField(null=True)
 
     class Meta:
-        db_table = 'client'
-
-    def __str__(self):
-        return self.name
+        db_table = 'client' 
     
 class Employer(BaseModel):
-    name = models.CharField(max_length=100)
-    address = models.CharField(max_length=100, null=True, blank=True)
+    name = m.CharField(max_length=50, unique=True)
+    address = m.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
-        db_table = 'employer'
+        db_table = 'employer' 
 
-    def __str__(self):
-        return self.name
-    
 class InsuranceCarrier(BaseModel):
-    name = models.CharField(max_length=100)
-    address = models.CharField(max_length=100, null=True, blank=True)
+    name = m.CharField(max_length=50, unique=True)
+    address = m.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
         db_table = 'insurance_carrier'
 
-    def __str__(self):
-        return self.name
-
 class ClaimAdministrator(BaseModel):
-    name = models.CharField(max_length=100)
-    address = models.CharField(max_length=100, null=True, blank=True)
+    name = m.CharField(max_length=50, unique=True)
+    address = m.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
         db_table = 'claim_administrator'
 
-    def __str__(self):
-        return self.name
-    
 class ClaimAdjuster(BaseModel):
-    name = models.CharField(max_length=100)
-    contacts = GenericRelation(Contact, related_query_name='claim_adjuster')
+    name = m.CharField(max_length=50, unique=True)
 
     class Meta:
-        db_table = 'claim_adjuster'
-
-    def __str__(self):
-        return self.name
+        db_table = 'claim_adjuster' 
 
 class DefenseLawFirm(BaseModel):
-    name = models.CharField(max_length=100)
-    address = models.CharField(max_length=100, null=True, blank=True)
+    name = m.CharField(max_length=50, unique=True)
+    address = m.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
         db_table = 'defense_law_firm'
 
-    def __str__(self):
-        return self.name
-    
 class DefenseAttorney(BaseModel):
-    name = models.CharField(max_length=100)
+    name = m.CharField(max_length=50, unique=True)
 
     class Meta:
         db_table = 'defense_attorney'
-
-    def __str__(self):
-        return self.name
-
+    
 class DefenseAssistant(BaseModel):
-    name = models.CharField(max_length=100)
-    contacts = GenericRelation(Contact, related_query_name='defense_assistant')
+    name = m.CharField(max_length=50, unique=True)
 
     class Meta:
         db_table = 'defense_assistant'
 
-    def __str__(self):
-        return self.name
-    
+
 class Case(BaseModel):
-    adj_num = models.CharField(max_length=50)
-    adj_date = models.DateField(null=True, blank=True)
-    claim_num = models.CharField(max_length=100)
-    claim_status = models.CharField(max_length=100)
 
-    settlement_date = models.DateField(null=True, blank=True)
-    status = models.ForeignKey(CaseStatus, null=True, on_delete=models.SET_NULL)
-    last_update = models.DateTimeField(auto_now=True)
+    STATUSES = [
+        ('denied','Denied'),
+        ('delayed','Delayed'),
+        ('accepted','Accepted')
+    ]
 
-    attorney = models.ForeignKey(Attorney, on_delete=models.SET_NULL, null=True)
-    assistant = models.ForeignKey(Assistant, on_delete=models.SET_NULL, null=True)
+    adj_date = m.DateField(null=True, blank=True)
+    adj_num = m.CharField(max_length=40, null=True, blank=True)
 
-    client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True)
-    employer = models.ForeignKey(Employer, on_delete=models.SET_NULL, null=True)
-    ins_carrier = models.ForeignKey(InsuranceCarrier, on_delete=models.SET_NULL, null=True)
+    claim_num = m.CharField(max_length=40, null=True, blank=True)
+    claim_status = m.CharField(max_length=10, null=True, blank=True, choices=STATUSES)
+ 
+    settlement_date = m.DateField(null=True, blank=True)
 
-    claim_admin = models.ForeignKey(ClaimAdministrator, on_delete=models.SET_NULL, null=True)
-    claim_adjuster = models.ForeignKey(ClaimAdjuster, on_delete=models.SET_NULL, null=True)
+    date_assigned = m.DateField(null=True, blank=True, help_text="Fecha en que el caso fue asignado a la firma o al asistente")
 
-    def_lawfirm = models.ForeignKey(DefenseLawFirm, on_delete=models.SET_NULL, null=True)
-    def_attorney = models.ForeignKey(DefenseAttorney, on_delete=models.SET_NULL, null=True)
-    def_assistant = models.ForeignKey(DefenseAssistant, on_delete=models.SET_NULL, null=True)
+    status = m.ForeignKey(CaseStatus, on_delete=m.PROTECT, related_name='cases')
+    attorney = m.ForeignKey(Attorney, on_delete=m.PROTECT, related_name='cases')
+    assistant = m.ForeignKey(Assistant, on_delete=m.PROTECT, related_name='cases')
+
+    client = m.ForeignKey(Client, on_delete=m.PROTECT, related_name='cases')
+    employer = m.ForeignKey(Employer, on_delete=m.PROTECT, related_name='cases')
+    
+    insurance = m.ForeignKey(InsuranceCarrier, on_delete=m.PROTECT, related_name='cases', null=True)
+
+    def_lawfirm = m.ForeignKey(DefenseLawFirm, on_delete=m.PROTECT, related_name='cases', null=True)
+    def_attorney = m.ForeignKey(DefenseAttorney, on_delete=m.PROTECT, related_name='cases', null=True)
+    def_assistant = m.ForeignKey(DefenseAssistant, on_delete=m.PROTECT, related_name='cases', null=True)
+
+    claim_admin = m.ForeignKey(ClaimAdministrator, on_delete=m.PROTECT, related_name='cases', null=True)
+    claim_adjuster = m.ForeignKey(ClaimAdjuster, on_delete=m.PROTECT, related_name='cases', null=True)
+
+    created_at = m.DateTimeField(auto_now_add=True)
+    updated_at = m.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'case'
@@ -207,22 +163,89 @@ class Case(BaseModel):
     def __str__(self):
         return f"{self.client.name} vs {self.employer.name}"
     
-    def get_injuries(self):
-        return self.injuries.filter(visible=True)
+    def name(self):
+        return f"{self.client.name} vs {self.employer.name}"
     
+    def days_active(self):
+        if self.settlement_date and self.adj_date:
+            return (self.settlement_date - self.adj_date).days
+        elif self.adj_date:
+            return (date.today() - self.adj_date).days
+        else:
+            return "Case has not been adjudicated."
+
+
+class InjuryType(BaseModel):
+    name = m.CharField(max_length=50, unique=True)
+
+    class Meta:
+        db_table =  'injury_type'
+    
+class BodyPart(BaseModel):
+    name = m.CharField(max_length=50, unique=True)
+
+    class Meta:
+        db_table = 'body_part'
 
 class Injury(BaseModel):
-    case = models.ForeignKey(Case, on_delete=models.CASCADE, related_name='injuries')
-    
-    type = models.ForeignKey(InjuryType, on_delete=models.SET_NULL, null=True)
-    body_part = models.ForeignKey(BodyPart, on_delete=models.SET_NULL, null=True)
-    date = models.DateField(null=True, blank=True)
+
+    case = m.ForeignKey(Case, on_delete=m.CASCADE, related_name='injuries')
+    date = m.DateField()
+    part = m.ForeignKey(BodyPart, on_delete=m.CASCADE)
+    type = m.ForeignKey(InjuryType, on_delete=m.CASCADE)
 
     class Meta:
         db_table = 'injury'
 
+    def name(self):
+        if self.part and self.type:
+            return f"{self.type.name} on {self.part.name}"
+        
+        elif self.part and not self.type:
+            return f"{self.part.name} injured"
+        
+        elif not self.part and self.type:
+            return self.type.name
+
+
+# Contacts 
+class Contact(BaseModel):
+    CONTACT_TYPES = [
+        ('phone','📞'),
+        ('email','🖂'),
+        ('fax','🖷')
+    ]
+
+    type = m.CharField(max_length=30, choices=CONTACT_TYPES, default='phone')
+    value = m.CharField(max_length=50) 
+    notes = m.CharField(max_length=50, null=True, blank=True)
+
+    class Meta: 
+        abstract = True
+
     def __str__(self):
-        if self.type:
-            return f"{self.injury_type.name} on {self.body_part.name}"
-        else: 
-            return f"{self.body_part.name}"
+        return f"({self.type}) {self.value}"
+    
+class ClientContact(Contact):
+    client = m.ForeignKey(Client, on_delete=m.CASCADE, related_name='contacts')
+
+    class Meta:
+        db_table = 'client_contact'
+
+class ClaimAdjusterContact(Contact):
+    claim_adj = m.ForeignKey(ClaimAdjuster, on_delete=m.CASCADE, related_name='contacts')
+
+    class Meta:
+        db_table = 'claim_adj_contact'
+
+class DefenseAttorneyContact(Contact):
+    def_attorney = m.ForeignKey(DefenseAttorney, on_delete=m.CASCADE, related_name='contacts')
+
+    class Meta:
+        db_table = 'def_attorney_contact'
+
+class DefenseAssistantContact(Contact):
+    def_assistant = m.ForeignKey(DefenseAssistant, on_delete=m.CASCADE, related_name='contacts')
+
+    class Meta:
+        db_table = 'def_assistant_contact'

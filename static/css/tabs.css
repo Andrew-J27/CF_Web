@@ -1,0 +1,102 @@
+@import url('base.css');
+
+main { 
+    justify-content: center;
+    height: 100%;
+}
+
+.tabs, .tab-content, .tab-buttons {
+    overflow: hidden;
+}
+
+.tabs {    
+    flex-grow: 1;
+    display: flex; 
+    flex-direction: column; 
+
+    background-color: #eee;
+    border-radius: 10px;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+}
+
+.tab-buttons {
+    display: flex;
+    flex-direction: row; 
+    height: max-content;
+    flex-shrink: 0;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    background-color: #e3e3e3;
+    color: #666;
+    border: none;
+}
+
+.tab-btn.active {
+    background-color: #eee;
+    border-top: 5px solid var(--header);
+    color: var(--header);
+}
+
+.tab-controls {
+    padding: 4% 5%; 
+
+    max-width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between; 
+}
+
+.tab-controls button {
+    display: none;
+}
+
+.tab-controls button.active {
+    padding: 10px 15px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+    font-size: 1.2rem;
+}
+
+.tab-controls i {
+    font-size: 1.5rem;
+}
+ 
+.btn-submit {
+    display: none;
+}
+
+.btn-submit { 
+    display: flex;
+    gap: 10px;
+}
+
+.tab-content {
+    padding: 5%;
+    height: 100%;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    flex-grow: 1;
+    display: flex; 
+}
+
+.tab-pane.active:first-child {
+    flex-direction: column;
+    gap: 30px;
+
+}

@@ -1,262 +1,384 @@
 {% extends "base.html" %}
+
 {% load static %}
 
 {% block link %}
-<link rel="stylesheet" href=' {% static "css/create-case.css" %} '>
-<link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
-
-<script type="module" src="{% static 'js/create.js' %}" defer> </script>
-<script type="module" src="{% static 'js/tabs.js'%}" defer></script>
-<script src="{% static 'js/validations.js' %}" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+<link rel="stylesheet" href="{% static 'css/create-case.css' %} ">
+<script src="{% static "js/tabs.js" %}" defer></script>
+<script src="{% static "js/contacts.js" %}" defer></script>
+<script src="{% static "js/injury.js" %}" defer></script>
 {% endblock link %}
 
 {% block main %}
-<div class="tabs">
-    <div class="tabs-buttons">
+<div class="tabs" data-initial="{% if initial %}{{initial}}{% else %}1{% endif %}"> 
+    <div class="tab-buttons">
         <button class="tab-btn active" data-tab="1">Client</button>
-        <button class="tab-btn" data-tab="2">Case info.</button>
+        <button class="tab-btn" data-tab="2">Case</button>
         <button class="tab-btn" data-tab="3">Injuries</button>
         <button class="tab-btn" data-tab="4">Employer</button>
-        <button class="tab-btn" data-tab="5">Ins. Carrier</button>
-        <button class="tab-btn" data-tab="6">Defense side</button> 
-        <button class="tab-btn" data-tab="7">Claim Admin.</button>
+        <button class="tab-btn" data-tab="5">Insurance</button>
+        <button class="tab-btn" data-tab="6">Claim Admin</button>
+        <button class="tab-btn" data-tab="7">Defense Side</button>
     </div>
-    <form action="" class="form tabs-content" method="POST">
-        {% csrf_token %}
-        <div class="tab-pane active" data-tab="1">
-            <input type="hidden" name="client-name" value="">
-
-            <label> Full Name:
-                <select id="select-client" name="client">
-                    <option value="" disabled selected>Last Name, First Name </option>
-                    {% for c in clients %}
-                    <option value="{{ c.id }}">{{ c.name }}</option>
-                    {% endfor %}
-                </select> 
-            </label>
-
-            <!--
-                <label> Full Name:
-                    <input type="text" name="client-name" value="" required>
-                </label>
-            -->
-            <label>Address:
-                <input type="text" name="client-address" required>
-            </label>
-            <label> Social Sec. Number:
-                <input type="text" name="client-ssn" required>
-            </label>
-            <label> Date of birth:
-                <input type="date" name="client-birth" required>
-            </label>
-
-            <span class="error-msg" id="client-error-msg">
-                Missing data of client
-            </span>
-
-            <div class="contact-information">
-                <h2> Contact Information: </h2>
-                <div class="contact-item-container" data-name="client">
-                    {% for item in client_contacts %}
-                        {% include "partials/contact-item.html" %}
-                    {% endfor %}
-                </div>
-                <button type="button" class="btn-add-contact active">
-                    <i class="fi fi-br-plus"></i>
-                    Add contact
-                </button>
+    <form method='POST' class="tab-content form">
+        {% csrf_token %} 
+        <div class="tab-pane active" data-tab="1" id="client-pane">
+            <h2>Client Information</h2> 
+            
+            <div class="form-field">
+                {{client_form.name.label_tag}}
+                {{client_form.name}}
+                {{client_form.name.errors}}
             </div>
+
+            <div class="form-field">
+                {{client_form.address.label_tag}}
+                {{client_form.address}}
+                {{client_form.address.errors}}
+            </div>
+
+            <div class="form-field">
+                {{client_form.ssn.label_tag}}
+                {{client_form.ssn}}
+                {{client_form.ssn.errors}}
+            </div>
+
+            <div class="form-field">
+                {{client_form.birth.label_tag}}
+                {{client_form.birth}}
+                {{client_form.birth.errors}}
+            </div>
+
+            <h2>
+                Client contact methods
+                <button class="btn-add-contact" type="button">
+                    <i class="fi fi-sr-plus"></i> Add contact
+                </button>
+            </h2>
+
+            <div class="contacts-container" id="client-contacts-container">
+                {{client_contact_formset.management_form}}
+
+                {% for form in client_contact_formset.forms %}
+                <div class="contact-item  ">
+                    {{ form.id }}
+
+                    {{ form.type.label_tag }}
+                    {{ form.type }}
+                    {% if form.type.errors %} {{ form.type.errors }} {% else %} <span></span> {% endif %}
+                    
+                    {{ form.value.label_tag }}
+                    {{ form.value }}
+                    {% if form.value.errors %} {{ form.value.errors }} {% else %} <span></span> {% endif %}
+
+                    {{ form.notes.label_tag }}
+                    {{ form.notes }}
+
+                    {% if forms.notes.errors %} {{forms.notes.errors}} {% else %} <span></span> {% endif %}
+                    {{ form.notes.errors }}
+                    
+                    <span></span>
+                    <button class="btn-delete-self" type="button">
+                        <i class="fi fi-sr-trash"></i>
+                    </button>
+                    {{form.active}}
+                </div>
+                {% endfor %} 
+            </div>
+            
+
         </div>
         <div class="tab-pane" data-tab="2">
-            <label for="select-case-status-id">Case Status:
-                <select name="case-status" id="select-case-status-id" required>
-                    {% for status in case_statuses %}
-                    <option value="{{status.id}}">{{status.name}}</option>
-                    {% endfor %}
-                </select>
-            </label>
+
+            <h2> Case Information </h2>
+
+            <div class="form-field">
+                {{ case_form.status.label_tag }}
+                {{ case_form.status }}
+                {{ case_form.status.errors }}
+            </div>
             <span></span>
-            <label for="select-attorney-id">Attorney Handling:
-                <select name="attorney-id" id="select-attorney-id" required {% if user_role == 'attorney' %} readonly {% endif %}>
-                    {% for attorney in attorneys %}
-                    <option value="{{attorney.id}}" {% if user_role == 'attorney' and system_user.id == attorney.id %} selected {% endif %} >{{attorney.name}}</option>
-                    {% endfor %}
-                </select>
-            </label>
+            <div class="form-field">
+                {{ case_form.adj_date.label_tag }}
+                {{ case_form.adj_date }}
+                {{ case_form.adj_date.errors }}
+            </div>
+            <div class="form-field">
+                {{ case_form.adj_num.label_tag }}
+                {{ case_form.adj_num }}
+                {{ case_form.adj_num.errors }}
+            </div>
+            <div class="form-field">
+                {{ case_form.claim_status.label_tag }}
+                {{ case_form.claim_status }}
+                {{ case_form.claim_status.errors }}
+            </div>
+            <div class="form-field">
+                {{ case_form.claim_num.label_tag }}
+                {{ case_form.claim_num }}
+                {{ case_form.claim_num.errors }}
+            </div>
+            <div class="form-field">
+                {{ case_form.settlement_date.label_tag }}
+                {{ case_form.settlement_date }}
+                {{ case_form.settlement_date.errors }}
+            </div>
+            <span></span>
 
-            <label for="select-assistant-id">Assistant Handling:
-                <select name="assistant-id" id="select-assistant-id" required {% if user_role == 'assistant' %} readonly {% endif %}> 
-                    {% for assistant in assistants %}
-                    <option value="{{assistant.id}}" {% if user_role == 'assistant' and system_user.id == assistant.id %} selected {% endif %} >{{assistant.name}}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label> Adjudication N°:
-                <input type="text" name="case-adj-num">
-            </label>
-            <label>Adjudication date:
-                <input type="date" name="case-adj-date">
-            </label>
-
-            <label> Claim N°:
-                <input type="text" name="case-claim-num">
-            </label>
-            <label for="input-case-claim-status"> Claim status:
-                <select name="case-claim-status" id="input-case-claim-status">
-                    <option value="accepted">Accepted</option>
-                    <option value="delayed">Delayed</option>
-                    <option value="denied">Denied</option>
-                </select>
-            </label>
-
-            <label>Settlement date:
-                <input type="date" name="case-settlement-date">
-            </label>
-            <span class="error-msg"></span>
+            <h2> Employers handling: </h2>
+            <div class="form-field">
+                {{ case_form.attorney.label_tag }}
+                {{ case_form.attorney }}
+                {{ case_form.attorney.errors }}
+            </div>
+            <div class="form-field">
+                {{ case_form.assistant.label_tag }}
+                {{ case_form.assistant }}
+                {{ case_form.assistant.errors }}
+            </div>
         </div>
-
         <div class="tab-pane" data-tab="3" id="injury-pane">
-            <div class="injury-item-container">
-                {% include "partials/injury-item.html" %}  
-            </div>
 
-            <button class="btn-add-injury active" type="button">
-                <i class="fi fi-br-plus"></i>
-                Add injury
-            </button>
-            <span class="error-msg"></span>
-        </div>
-
-        <div class="tab-pane" data-tab="4">
-            <input type="hidden" name="employer-name">
-            <label>Name:
-                <select id="select-employer" name="employer">
-                    <option value="" disabled selected>-- Select existing or add New --</option>
-                    {% for emp in employers %}
-                    <option value="{{ emp.id }}">{{ emp.name }}</option>
-                    {% endfor %}
-                </select> 
-            </label>
-            <label>Address:
-                <input type="text" name="employer-address">
-            </label>
-        </div>
-
-        <div class="tab-pane" data-tab="5">
-            <input type="hidden" name="ins-carrier-name">
-            <label>Company Name:
-                <select id="select-ins-carrier" name="ins-carrier">
-                    <option value="" disabled selected>-- Select existing or add New --</option>
-                    {% for c in ins_carriers %}
-                    <option value="{{ c.id }}">{{ c.name }}</option>
-                    {% endfor %}
-                </select> 
-            </label>
-            <label>Address:
-                <input type="text" name="ins-carrier-address">
-            </label>
-        </div>
-
-        <div class="tab-pane" data-tab="6">
-            <input type="hidden" name="def-lawfirm-name">
-            <label>Law Firm Name:
-                <select id="select-def-lawfirm" name="def-lawfirm">
-                    <option value="" disabled selected>-- Select existing or add New --</option>
-                    {% for law_firm in def_lawfirms %}
-                    <option value="{{ law_firm.id }}">{{ law_firm.name }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label>Address:
-                <input type="text" name="law-firm-address">
-            </label>
-            <span></span>
-
-            <input type="hidden" name="def-att-name">
-            <label> D. Attorney:
-                <select id="select-def-att" name="def-att">
-                    <option value="" disabled selected>-- Select existing or add New --</option>
-                    {% for att in def_atts %}
-                    <option value="{{ att.id }}">{{ att.name }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <span></span>
-
-            <input type="hidden" name="def-asst-name">
-            <label>D. Assistant: 
-                <select id="select-def-asst" name="def-asst">
-                    <option value="" disabled selected>-- Select existing or add New --</option>
-                    {% for asst in def_assts %}
-                    <option value="{{ asst.id }}">{{ asst.name }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <span class="error-msg"></span> 
-
-            <div class="contact-information">
-                <h2>Assistant Contact Information: </h2>
-                <div class="contact-item-container" data-name="def-asst"></div>
-                <button type="button" class="btn-add-contact active">
-                    <i class="fi fi-br-plus"></i>
-                    Add contact
+            <h2> 
+                Injuries Detail 
+                <button class="btn-add-injury" type="button">
+                    <i class="fi fi-sr-plus"></i> Add Injury
                 </button>
-            </div>  
-        </div>
+            </h2>
+            <div class="injuries-container" id="injuries-container">
 
-        <div class="tab-pane" data-tab="7">
-            <input type="hidden" name="claim-admin-name">
-            <label>Claim Administrator:
-                <select id="select-claim-admin" name="claim-admin">
-                {% for c in claim_admins %}
-                    <option value="{{ c.id }}">{{ c.name }}</option>
-                {% endfor %}
-                </select> 
-            </label>
-            <label>Address:
-                <input type="text" name="claim-admin-address">
-            </label>
-            <input type="hidden" name="claim-adj-name">
-            <label> Claim Adj. Name:
-                <select id="select-claim-adj" name="claim-adj">
-                {% for adj in claim_adjs %}
-                    <option value="{{ adj.id }}">{{ adj.name }}</option>
-                {% endfor %}
-                </select>
-            </label>
-            <span></span>
-            <div class="contact-information">
-                <h2> Adjuster Contact Information: </h2>
-                <div class="contact-item-container" data-name="claim-adj"></div>
-                <button type="button" class="btn-add-contact active">
-                    <i class="fi fi-br-plus"></i>
-                    Add contact
-                </button>
+                {{injury_formset.management_form}}
+    
+                {% for form in injury_formset.forms %}
+                <div class="injury-item">
+                    {{ form.id }}
+                    
+                    {{ form.date.label_tag }}
+                    {{ form.date }}
+                    {% if form.date.errors %}{{ form.date.errors }}{% else %}<span></span>{% endif %}
+    
+                    {{ form.part.label_tag }}
+                    {{ form.part }}
+                    {% if form.part.errors %}{{ form.part.errors }} {% else %}<span></span>{% endif %}
+    
+                    {{ form.type.label_tag }}
+                    {{ form.type }}
+                    {% if form.type.errors %}{{ form.type.errors }}{% else %}<span></span>{% endif %}
+    
+                    <span></span>
+                    <button class="btn-delete-self" type="button">
+                        <i class="fi fi-sr-trash"></i>
+                    </button>
+                    {{form.DELETE}}
+                </div>
+                {% endfor %} 
             </div>
         </div>
-        
-
-        <div class="tabs-controller">
-            <button class="btn-prev" id="btn-prev" type="button">
-                <i class="fi fi-sr-caret-left"></i>
-                Previous
-            </button>
-            <span class="tabs-spacer"></span>
-            <button class="btn-next active" id="btn-next" type="button">
-                Next 
-                <i class="fi fi-sr-caret-right"></i>
-            </button>
-            <button class="btn-submit" id="btn-submit" type="button">
-                Save 
-                <i class="fi fi-sr-disk"></i>
-            </button>
+        <div class="tab-pane" data-tab="4" id="employer-pane">
+            <h2> Client's Employer Information</h2>
+            <div class="form-field">
+                {{ employer_form.name.label_tag }}
+                {{ employer_form.name }}
+                {{ employer_form.name.errors }}
+            </div>
+           <div class="form-field">
+                {{ employer_form.address.label_tag }}
+                {{ employer_form.address }}
+                {{ employer_form.address.errors }}
+            </div>
         </div>
+        <div class="tab-pane" data-tab="5" id="insurance-pane">
+
+            <h2> Employer's Insurance Carrier Information </h2>
+            <div class="form-field">
+                {{ insurance_form.name.label_tag }}
+                {{ insurance_form.name }}
+                {{ insurance_form.name.errors }}
+            </div>
+           <div class="form-field">
+                {{ insurance_form.address.label_tag }}
+                {{ insurance_form.address }}
+                {{ insurance_form.address.errors }}
+            </div>
+        </div>
+        <div class="tab-pane" data-tab="6" id="claim-pane">
+
+            <h2> Claim Administrator Information </h2>
+            <div class="form-field">
+                {{ claim_admin_form.name.label_tag }}
+                {{ claim_admin_form.name }}
+                {{ claim_admin_form.name.errors }}
+            </div>
+           <div class="form-field">
+                {{ claim_admin_form.address.label_tag }}
+                {{ claim_admin_form.address }}
+                {{ claim_admin_form.address.errors }}
+            </div>
+
+            <h2> Claim Adjuster Information </h2>
+
+            <div class="form-field">
+                {{ claim_adjuster_form.name.label_tag }}
+                {{ claim_adjuster_form.name }}
+                {{ claim_adjuster_form.name.errors }}
+            </div>
+
+            <h2>
+                Claim Adjuster contact methods
+                <button class="btn-add-contact" type="button">
+                    <i class="fi fi-sr-plus"></i> Add contact
+                </button>
+            </h2>
+
+            <div class="contacts-container" id="claim-adjuster-contacts-container">
+                {{claim_adjuster_contact_formset.management_form}}
+
+                {% for form in claim_adjuster_contact_formset.forms %}
+
+                <div class="contact-item">
+                    {{ form.id }}
+                    
+                    <div class="form-field">    
+                        {{ form.type.label_tag }}
+                        {{ form.type }}
+                        {{ form.type.errors }}
+                    </div>
+                    
+                    <div class="form-field">
+                        {{ form.value.label_tag }}
+                        {{ form.value }}
+                        {{ form.value.errors }} 
+                    </div>
+                    
+                    <div class="form-field">
+                        {{ form.notes.label_tag }}
+                        {{ form.notes }}
+                        {{ form.notes.errors }}
+                    </div>
+                    
+                    <span></span>
+                    <button class="btn-delete-self" type="button">
+                        <i class="fi fi-sr-trash"></i>
+                    </button>
+                    {{form.DELETE}}
+                </div>
+                {% endfor %} 
+            </div>
+        </div>
+
+
+        <div class="tab-pane" data-tab="7" id="defense-pane">
+            <h2> Defense Law firm Information</h2>
+            <div class="form-field">
+                {{ def_lawfirm_form.name.label_tag }}
+                {{ def_lawfirm_form.name }}
+                {{ def_lawfirm_form.name.errors }}
+            </div>
+            
+            <div class="form-field">
+                {{ def_lawfirm_form.address.label_tag }}
+                {{ def_lawfirm_form.address }}
+                {{ def_lawfirm_form.address.errors }}
+            </div>
+            
+            <h2> Def. Attorney Information </h2>
+
+            <div class="form-field">
+                {{ def_attorney_form.name.label_tag }}
+                {{ def_attorney_form.name }}
+                {{ def_attorney_form.name.errors }}
+            </div>
+
+            <h2>
+                Def. Attorney contact methods
+                <button class="btn-add-contact" type="button">
+                    <i class="fi fi-sr-plus"></i> Add contact
+                </button>
+            </h2>
+
+            <div class="contacts-container" id="def-attorney-contacts-container">
+                {{def_attorney_contact_formset.management_form}}
+
+                {% for form in def_attorney_contact_formset.forms %}
+                <div class="contact-item  ">
+                    {{ form.id }}
+
+                    {{ form.type.label_tag }}
+                    {{ form.type }}
+                    {{ form.type.errors }}
+
+                    {{ form.value.label_tag }}
+                    {{ form.value }}
+                    {{ form.value.errors }} 
+
+                    {{ form.notes.label_tag }}
+                    {{ form.notes }}
+                    {{ form.notes.errors }}
+                    
+                    <span></span>
+                    <button class="btn-delete-self" type="button">
+                        <i class="fi fi-sr-trash"></i>
+                    </button>
+                    {{form.DELETE}}
+                </div>
+                {% endfor %} 
+            </div> 
+
+            <h2> Def. Assistant Information </h2>
+            <div class="form-field"> 
+                {{ def_assistant_form.name.label_tag }}
+                {{ def_assistant_form.name }}
+                {{ def_assistant_form.name.errors }}
+            </div>
+
+            <h2>
+                Def. Assistant contact methods
+                <button class="btn-add-contact" type="button">
+                    <i class="fi fi-sr-plus"></i> Add contact
+                </button>
+            </h2>
+            <div class="contacts-container" id="def-assistant-contacts-container">
+                {{def_assistant_contact_formset.management_form}}
+
+                {% for form in def_assistant_contact_formset.forms %}
+                <div class="contact-item  ">
+                    {{ form.id }}
+
+                    {{ form.type.label_tag }}
+                    {{ form.type }}
+                    {{ form.type.errors }}
+
+                    {{ form.value.label_tag }}
+                    {{ form.value }}
+                    {{ form.value.errors }} 
+
+                    {{ form.notes.label_tag }}
+                    {{ form.notes }}
+                    {{ form.notes.errors }}
+                    
+                    <span></span>
+                    <button class="btn-delete-self" type="button">
+                        <i class="fi fi-sr-trash"></i>
+                    </button>
+                    {{form.DELETE}}
+                </div>
+                {% endfor %} 
+            </div> 
+        </div> 
     </form>
-
-
+    <div class="tab-controls">
+        <button class="btn-prev active"> 
+            <i class="fi fi-sr-caret-left"></i> Prev
+        </button>
+        <span class="spacer"></span>
+        <button class="btn-submit">
+            <i class="fi fi-sr-disk"></i> Save
+        </button>
+        <span class="spacer"></span>
+        <button class="btn-next active"> 
+            Next <i class="fi fi-sr-caret-right"></i>
+        </button>
+        
+    </div>
 </div>
 {% endblock main %}
-
-{% block scripts %} 
-{% endblock scripts %}

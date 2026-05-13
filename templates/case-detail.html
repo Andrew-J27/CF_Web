@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block link %}
+<link rel="stylesheet" href="{% static "css/case-detail.css" %}">
+{% endblock link %}
+
+{% block main %}
+
+<div class="detail">
+
+    <div class="card">
+        <h2><i class="fi fi-sr-user"></i> Client Information</h2>
+        <div class="card-content">
+            <p>
+                <strong><i class="fi fi-sr-id-card-clip-alt"></i> Full Name:</strong>
+                {{case.client.name}}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-land-layer-location"></i> Address:</strong>
+                {{case.client.address|default:"Not registered"}}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-id-card"></i> SSN:</strong>
+                {{case.client.ssn|default:"Not registered"}}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-cake-birthday"></i> Date of birth:</strong>
+                {{case.client.birth|date:"d-m-Y"|default:"Not registered"}}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-phone-call"></i> Contacts:</strong>
+                {% for contact in case.client.contacts.all %}
+                    <span class="contact-badge">
+                        {{ contact.get_type_display }} {{ contact.value }}
+                        {% if contact.notes %}({{ contact.notes }}){% endif %}
+                    </span>
+                    {% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    No contacts registered
+                {% endfor %}
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><i class="fi fi-sr-building"></i> Employer Information</h2>
+        <div class="card-content">
+            <p>
+                <strong><i class="fi fi-sr-building"></i> Company name:</strong>
+                {{case.employer.name}}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-land-layer-location"></i> Address:</strong>
+                {{case.employer.address|default:"Not registered"}}
+            </p>
+        </div>
+    </div>
+
+    <div class="card" id="case-card">
+        <h2><i class="fi fi-sr-briefcase"></i> Case Information</h2>
+        <div class="card-content">
+            <p>
+                <strong><i class="fi fi-sr-calendar"></i> Assigned date:</strong>
+                {{case.date_assigned|date:"d-m-Y"|default:"Not registered"}}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-calendar"></i> Adjudication date:</strong>
+                {{case.adj_date|date:"d-m-Y"|default:"Not adjudicated yet"}}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-hashtag"></i> Adjudication N°:</strong>
+                {{case.adj_num|default:"Not adjudicated yet"}}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-document"></i> Claim Status:</strong>
+                <span class="status-badge status-{{case.claim_status}}">
+                    {{case.get_claim_status_display|default:"Pending"}}
+                </span>
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-hashtag"></i> Claim N°:</strong>
+                {{case.claim_num|default:"Not registered"}}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-calendar"></i> Settlement date:</strong>
+                {{case.settlement_date|date:"d-m-Y"|default:"Not settled yet"}}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-chart-histogram"></i> Days active:</strong>
+                {{case.days_active}}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-folder"></i> Internal Status:</strong>
+                {{case.status.name|default:"Not assigned"}}
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><i class="fi fi-sr-gavel"></i> Legal Team (Plaintiff)</h2>
+        <div class="card-content">
+            <p>
+                <strong><i class="fi fi-sr-gavel"></i> Attorney:</strong>
+                {{case.attorney.name|default:"Not assigned"}}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-clipboard"></i> Assistant:</strong>
+                {{case.assistant.name|default:"Not assigned"}}
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><i class="fi fi-sr-shield"></i> Insurance & Claims</h2>
+        <div class="card-content">
+            <p>
+                <strong><i class="fi fi-sr-building"></i> Insurance Carrier:</strong>
+                {{case.insurance.name|default:"Not registered"}}
+                {% if case.insurance.address %}
+                    <br><small>{{case.insurance.address}}</small>
+                {% endif %}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-user-tie"></i> Claim Administrator:</strong>
+                {{case.claim_admin.name|default:"Not assigned"}}
+                {% if case.claim_admin.address %}
+                    <br><small>{{case.claim_admin.address}}</small>
+                {% endif %}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-user"></i> Claim Adjuster:</strong>
+                {{case.claim_adjuster.name|default:"Not assigned"}}
+                {% with contacts=case.claim_adjuster.contacts.all %}
+                    {% if contacts %}
+                        <br>
+                        <small>
+                            {% for contact in contacts %}
+                                {{ contact.get_type_display }} {{ contact.value }}
+                                {% if contact.notes %}({{ contact.notes }}){% endif %}
+                                {% if not forloop.last %} | {% endif %}
+                            {% endfor %}
+                        </small>
+                    {% endif %}
+                {% endwith %}
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><i class="fi fi-sr-scale"></i> Defense Team</h2>
+        <div class="card-content">
+            <p>
+                <strong><i class="fi fi-sr-building"></i> Defense Law Firm:</strong>
+                {{case.def_lawfirm.name|default:"Not assigned"}}
+                {% if case.def_lawfirm.address %}
+                    <br><small>{{case.def_lawfirm.address}}</small>
+                {% endif %}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-gavel"></i> Defense Attorney:</strong>
+                {{case.def_attorney.name|default:"Not assigned"}}
+                {% with contacts=case.def_attorney.contacts.all %}
+                    {% if contacts %}
+                        <br>
+                        <small>
+                            {% for contact in contacts %}
+                                {{ contact.get_type_display }} {{ contact.value }}
+                                {% if contact.notes %}({{ contact.notes }}){% endif %}
+                                {% if not forloop.last %} | {% endif %}
+                            {% endfor %}
+                        </small>
+                    {% endif %}
+                {% endwith %}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-clipboard"></i> Defense Assistant:</strong>
+                {{case.def_assistant.name|default:"Not assigned"}}
+                {% with contacts=case.def_assistant.contacts.all %}
+                    {% if contacts %}
+                        <br>
+                        <small>
+                            {% for contact in contacts %}
+                                {{ contact.get_type_display }} {{ contact.value }}
+                                {% if contact.notes %}({{ contact.notes }}){% endif %}
+                                {% if not forloop.last %} | {% endif %}
+                            {% endfor %}
+                        </small>
+                    {% endif %}
+                {% endwith %}
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><i class="fi fi-sr-first-aid"></i> Injuries</h2>
+        <div class="card-content">
+            {% if case.injuries.all %}
+                <table class="injuries-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Injury Type</th>
+                            <th>Body Part</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for injury in case.injuries.all %}
+                        <tr>
+                            <td>{{ injury.date|date:"d-m-Y" }}</td>
+                            <td>{{ injury.type.name|default:"-" }}</td>
+                            <td>{{ injury.part.name|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p><em>No injuries registered for this case</em></p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <h2><i class="fi fi-sr-clock"></i> System Information</h2>
+        <div class="card-content">
+            <p>
+                <strong><i class="fi fi-sr-calendar-plus"></i> Created:</strong>
+                {{case.created_at|date:"d-m-Y H:i"}}
+            </p>
+            <p>
+                <strong><i class="fi fi-sr-calendar-check"></i> Last updated:</strong>
+                {{case.updated_at|date:"d-m-Y H:i"}}
+            </p>
+        </div>
+    </div>
+
+</div>
+
+
+{% endblock main %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block link %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock link %}
+
+
+{% block main %}
+<div>
+    <img src="{% static 'img/cf.png' %}" alt="">
+    <h2>Comley Fresch, a Law Partnership</h2>
+</div>
+
+<p>Hello, {{sysuser}}</p>
+{% endblock main %}

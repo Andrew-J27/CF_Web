@@ -1,0 +1,36 @@
+{% extends "show/show-generic.html" %}
+
+{% load static %}
+
+{% block extra_link %}
+<script src="{% static "js/list-cases.js" %}" defer></script>
+{% endblock extra_link %}
+
+{% block labels %} 
+<th>Status</th>
+<th>Case Name</th>
+<th>Attorney Handling</th>
+<th>Assistant Handling</th>
+<th>ADJ Date</th>
+{% endblock labels %}
+
+{% block attributes %} 
+<td>{{item.status}}</td>
+<td>{{item.name}}</td>
+<td>{{item.attorney.name}}</td>
+<td>{{item.assistant.name}}</td>
+<td> 
+    {% if item.adj_date %}
+    {{item.adj_date}}
+    {% else %}
+    Not ADJ yet.
+
+    {{detail_url}}
+    {% endif %}
+</td>
+{% endblock attributes %}
+
+{% block create_url %}{% url "create-case" %}{% endblock %}
+{% block update_url %}{% url "update-case" 0 %}{% endblock %}
+{% block delete_url %}{% url "delete-case" 0 %}{% endblock %}
+{% block restore_url %}{% url "restore-case" 0 %}{% endblock %}
