@@ -54,7 +54,6 @@ class ClientForm(forms.ModelForm):
             'birth': forms.DateInput(attrs={'class': 'form-field', 'type': 'date'}),
         }
 
-
 class ClientContactForm(forms.ModelForm):
     class Meta:
         model = ClientContact

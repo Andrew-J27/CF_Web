@@ -1900,7 +1900,7 @@ class Report(View):
                 'Attorney': case.attorney.name if case.attorney else '',
                 'Assistant': case.assistant.name if case.assistant else '',
                 'Case Status': case.status.name if case.status else '',
-                'Details Registered': 'Yes' if case.claim_num else 'No',
+                'Details Registered': 'Yes' if case.def_lawfirm or case.claim_admin or case.def_attorney else 'No',
                 'ADJ Filed': 'Yes' if case.adj_date else 'No',
                 'ADJ Number': case.adj_num or '',
                 'Claim Number': case.claim_num or '',
@@ -1917,7 +1917,7 @@ class Report(View):
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         
-        filename = f'cases_report_{start_date}_to_{end_date}.xlsx'
+        filename = f'Cases_Report_Week-.xlsx'
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
         with pd.ExcelWriter(response, engine='openpyxl') as writer:

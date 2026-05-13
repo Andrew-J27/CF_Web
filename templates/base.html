@@ -37,6 +37,11 @@
             Search Case
         </a>
 
+        <a href=" {% url "report" %}"> 
+            <i class="fi fi-sr-clipboard"></i>
+            Reports
+        </a>
+
         <span class="spacer"></span>
 
         <a class="user-card">
@@ -62,10 +67,13 @@
                     <i class="fi fi-sr-review"></i>
                     Assistants 
                 </a>
+                
                 <a href=" {% url "status" %}"> 
                     <i class="fi fi-sr-lawyer-man"></i>
                     Case Statuses
                 </a>
+
+                
                 {% endif %}
             {% endif %}
             
