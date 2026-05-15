@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block link %}
+<link rel="stylesheet" href="{% static 'css/show-generic.css' %}">
+{% endblock link %}
+
+
+{% block main %}
+<div class="show-container">
+    
+    <div class="show">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>User</th>
+                    <th>Change detail</th>
+                </tr>
+            </thead>
+            
+            <tbody>
+                {% for item in history_data %}
+                <tr>
+                    <td>{{ item.date }}</td>
+                    <td>{{ item.user }}</td>
+                    <td>
+                        {% if item.is_initial %}
+                            <em> Initial case creation</em>
+                        {% elif item.has_changes %}
+                            <ul>
+                            {% for change in item.changes %}
+                                <li>
+                                    <strong>{{ change.field }}:</strong> 
+                                    {{ change.old }} → {{ change.new }}
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <em> Save without changes (no fields modified)</em>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3">No history available</td>
+                </tr>
+                {% endfor %}    
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock main %}

@@ -6,12 +6,53 @@
 <script src="{% static "js/list-cases.js" %}" defer></script>
 {% endblock extra_link %}
 
+{% block filter %}
+{% if not user_is_assistant %}
+<label class="form-label">Assistant: </label> 
+    <select name="assistant" class="form-select">
+        <option value="">All Assistants</option>
+        {% for assistant in assistants %}
+        <option value="{{ assistant.id }}" 
+                {% if selected_assistant|stringformat:"s" == assistant.id|stringformat:"s" %}selected{% endif %}>
+            {{ assistant.name }}
+        </option>
+        {% endfor %}
+    </select> 
+</label>
+{% endif %}
+{% if not user_is_attorney %}
+<label class="form-label">Attorney: 
+    <select name="attorney" class="form-select">
+        <option value="">All Attorneys</option>
+        {% for attorney in attorneys %}
+        <option value="{{ attorney.id }}" 
+                {% if selected_attorney|stringformat:"s" == attorney.id|stringformat:"s" %}selected{% endif %}>
+            {{ attorney.name }}
+        </option>
+        {% endfor %}
+    </select> 
+</label>
+{% endif %}
+<label class="form-label">Case Status:
+    <select name="status" class="form-select">
+        <option value="">All Statuses</option>
+        {% for status in statuses %}
+        <option value="{{ status.id }}" 
+                {% if selected_status|stringformat:"s" == status.id|stringformat:"s" %}selected{% endif %}>
+            {{ status.name }}
+        </option>
+        {% endfor %}
+    </select>
+</label>
+{% endblock filter %}
+
 {% block labels %} 
 <th>Status</th>
 <th>Case Name</th>
 <th>Attorney Handling</th>
 <th>Assistant Handling</th>
 <th>ADJ Date</th>
+<th>History</th>
 {% endblock labels %}
 
 {% block attributes %} 
@@ -23,10 +64,14 @@
     {% if item.adj_date %}
     {{item.adj_date}}
     {% else %}
-    Not ADJ yet.
-
-    {{detail_url}}
+    Not ADJ yet. 
     {% endif %}
+</td>
+
+<td>
+    <a href="{% url "case-history" item.id %}">
+        <i class="fi fi-sr-time-past"></i>
+    </a>
 </td>
 {% endblock attributes %}
 

@@ -16,6 +16,8 @@ urlpatterns = [
     path('case/<int:pk>/delete/', DeleteCase.as_view(), name='delete-case'),
     path('case/<int:pk>/restore/', RestoreCase.as_view(), name='restore-case'),
 
+    path('case/<int:pk>/history/', CaseHistory.as_view(), name='case-history'),
+
     # REPORT
     path('report/', Report.as_view(), name='report'),
     path('download-report/', Home.as_view(), name='case_report'),    
@@ -23,10 +25,10 @@ urlpatterns = [
     
     # ELEMENTS CRUD
     path('status/', ListCaseStatus.as_view(), name='status'),
-    path('status/create/', CreateStatus.as_view(), name='create-status'),
-    path('status/<int:pk>/delete/', DeleteStatus.as_view(), name='delete-status'),
-    path('status/<int:pk>/update/', UpdateStatus.as_view(), name='update-status'),
-    path('status/<int:pk>/restore/', RestoreStatus.as_view(), name='restore-status'),
+    path('status/create/', CreateCaseStatus.as_view(), name='create-status'),
+    path('status/<int:pk>/delete/', DeleteCaseStatus.as_view(), name='delete-status'),
+    path('status/<int:pk>/update/', UpdateCaseStatus.as_view(), name='update-status'),
+    path('status/<int:pk>/restore/', RestoreCaseStatus.as_view(), name='restore-status'),
 
     path('attorney/', ListAttorney.as_view(), name='attorney'),
     path('attorney/create/', CreateAttorney.as_view(), name='create-attorney'),
@@ -42,9 +44,9 @@ urlpatterns = [
 
     path('employer/', ListEmployer.as_view(), name='employer'),
     path('employer/create/', CreateEmployer.as_view(), name='create-employer'),
-    path('employer/update/<int:pk>/', UpdateEmployer.as_view(), name='update-employer'),
-    path('employer/delete/<int:pk>/', DeleteEmployer.as_view(), name='delete-employer'),
-    path('employer/restore/<int:pk>/', RestoreEmployer.as_view(), name='restore-employer'),
+    path('employer/<int:pk>/update/', UpdateEmployer.as_view(), name='update-employer'),
+    path('employer/<int:pk>/delete/', DeleteEmployer.as_view(), name='delete-employer'),
+    path('employer/<int:pk>/restore/', RestoreEmployer.as_view(), name='restore-employer'),
 
     path('insurance-carrier/', ListInsuranceCarrier.as_view(), name='insurance-carrier'),
     path('insurance-carrier/create/', CreateInsuranceCarrier.as_view(), name='create-insurance-carrier'),

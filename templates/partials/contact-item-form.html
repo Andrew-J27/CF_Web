@@ -1,0 +1,21 @@
+<div class="contact-item">
+    {{ form.id }}
+
+    {{ form.type.label_tag }}
+    {{ form.type }}
+    {% if form.type.errors %} {{ form.type.errors }} {% else %} <span></span> {% endif %}
+    
+    {{ form.value.label_tag }}
+    {{ form.value }}
+    {% if form.value.errors %} {{ form.value.errors }} {% else %} <span></span> {% endif %}
+
+    {{ form.notes.label_tag }}
+    {{ form.notes }}
+    {% if forms.notes.errors %} {{forms.notes.errors}} {% else %} <span></span> {% endif %} 
+    
+    <span></span>
+    <button class="btn-delete-self" type="button">
+        <i class="fi fi-sr-trash"></i>
+    </button>
+    {{form.active}}
+</div>

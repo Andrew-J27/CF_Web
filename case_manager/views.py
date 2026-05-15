@@ -1,26 +1,23 @@
+from django.views.generic import ListView, DetailView, UpdateView, CreateView
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
+from django.urls import reverse, reverse_lazy
+from django.http import HttpResponse
 from django.contrib import messages
 from django.views import View
-from django.http import HttpResponse
 from django.db.models import Q
-from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, DetailView, UpdateView, CreateView
 from .models import *
 from .forms import * 
 
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
  
-
-
 class Login(View):
 
     def get(self, request):
         return render(request, 'login.html')
 
     def post(self, request):
-
         data = request.POST
         username = data.get('username')
         password = data.get('password')
@@ -34,11 +31,8 @@ class Login(View):
             return render(request, 'login.html', {})
 
 class Logout(View):
-
     def get(self, request):
-
         logout(request)
-
         return redirect('login')
 
 @method_decorator(login_required, name='dispatch')
@@ -61,27 +55,70 @@ class Home(View):
 
         return render(request, 'home.html', {'sysuser':system_user, 'role':user_role}) 
 
-
-def CaseContext(request, form_class=CaseForm(), return_query=True): 
-    search = request.GET.get('search')
-    if not search: search = ""
-
+def CaseContext(request, form_class=CaseForm(), return_query=True):
+    search = request.GET.get('search', '')
+    assistant_id = request.GET.get('assistant', '')
+    attorney_id = request.GET.get('attorney', '')
+    status_id = request.GET.get('status', '')
+    claim_status = request.GET.get('claim_status', '')
+    
     context = {
-        'name':'Case Registers',
-        'form':form_class,
-        'search':search, 
-        'delete_active':False,
-        'restore_active':False,
+        'name': 'Case Registers',
+        'form': form_class,
+        'search': search,
+        'delete_active': False,
+        'restore_active': False,
+        # Datos para los selects de filtro
+        'assistants': Assistant.objects.filter(active=True).order_by('name'),
+        'attorneys': Attorney.objects.filter(active=True).order_by('name'),
+        'statuses': CaseStatus.objects.filter(active=True).order_by('name'),
+        'statuses': CaseStatus.objects.filter(active=True),
+        # Valores seleccionados actualmente
+        'selected_assistant': assistant_id,
+        'selected_attorney': attorney_id,
+        'selected_status': status_id,
+        'selected_claim_status': claim_status,
     }
-
+    
     if not return_query:
         return context
     
-    queryset = Case.objects.filter(Q(client__name__icontains=search) | Q(employer__name__icontains=search))
- 
+    # Base queryset
+    queryset = Case.objects.filter(
+        Q(client__name__icontains=search) | Q(employer__name__icontains=search)
+    )
+    
+    # Aplicar filtros
+    if assistant_id:
+        queryset = queryset.filter(assistant_id=assistant_id)
+    
+    if attorney_id:
+        queryset = queryset.filter(attorney_id=attorney_id)
+    
+    if status_id:
+        queryset = queryset.filter(status_id=status_id)
+    
+    if claim_status:
+        queryset = queryset.filter(claim_status=claim_status)
+    
+    # Filtros por rol del usuario
+    if request.user.systemuser.role != "admin":
+        queryset = queryset.filter(active=True)
+    
+    if request.user.systemuser.role == "attorney":
+        context['user_is_attorney'] = True
+        attorney = Attorney.objects.get(user=request.user.systemuser)
+        queryset = queryset.filter(attorney=attorney)
+    
+    if request.user.systemuser.role == "assistant":
+        context['user_is_assistant'] = True
+        assistant = Assistant.objects.get(user=request.user.systemuser)
+        queryset = queryset.filter(assistant=assistant)
+    
     context['items'] = queryset
-
+    
     return context
+
 
 @method_decorator(login_required, name='dispatch')
 class CreateCase(View):
@@ -89,16 +126,16 @@ class CreateCase(View):
     def get(self, request):
         # GET request: formularios vacíos
         case_form = CaseForm(prefix='case')
-        client_form = ClientForm(prefix='client')
-        employer_form = EmployerForm(prefix='employer')
+        client_form = ClientChoiceForm(prefix='client')
+        employer_form = EmployerChoiceForm(prefix='employer')
 
         # Usar los forms opcionales SIN instancia (None explícito)
-        insurance_form = InsuranceCarrierOptionalForm(prefix='insurance', instance=None)
-        def_lawfirm_form = DefenseLawFirmOptionalForm(prefix='def_lawfirm', instance=None)
-        def_attorney_form = DefenseAttorneyOptionalForm(prefix='def_attorney', instance=None)
-        def_assistant_form = DefenseAssistantOptionalForm(prefix='def_assistant', instance=None)
-        claim_admin_form = ClaimAdministratorOptionalForm(prefix='claim_admin', instance=None)
-        claim_adjuster_form = ClaimAdjusterOptionalForm(prefix='claim_adjuster', instance=None)
+        insurance_form = InsuranceCarrierChoiceForm(prefix='insurance', instance=None)
+        def_lawfirm_form = DefenseLawFirmChoiceForm(prefix='def_lawfirm', instance=None)
+        def_attorney_form = DefenseAttorneyChoiceForm(prefix='def_attorney', instance=None)
+        def_assistant_form = DefenseAssistantChoiceForm(prefix='def_assistant', instance=None)
+        claim_admin_form = ClaimAdministratorChoiceForm(prefix='claim_admin', instance=None)
+        claim_adjuster_form = ClaimAdjusterChoiceForm(prefix='claim_adjuster', instance=None)
  
         client_contact_formset = ClientContactFormSet(prefix='client_contacts')
         injury_formset = InjuryFormSet(prefix='injuries')
@@ -136,16 +173,16 @@ class CreateCase(View):
         injury_formset = InjuryFormSet(data, prefix='injuries')
         
         # Forms OBLIGATORIOS
-        client_form = ClientForm(data, prefix='client')
-        employer_form = EmployerForm(data, prefix='employer')
+        client_form = ClientChoiceForm(data, prefix='client')
+        employer_form = EmployerChoiceForm(data, prefix='employer')
         
         # ✅ CORREGIDO: Forms OPCIONALES con instance=None explícito
-        insurance_form = InsuranceCarrierOptionalForm(data, prefix='insurance', instance=None)
-        def_lawfirm_form = DefenseLawFirmOptionalForm(data, prefix='def_lawfirm', instance=None)
-        def_attorney_form = DefenseAttorneyOptionalForm(data, prefix='def_attorney', instance=None)
-        def_assistant_form = DefenseAssistantOptionalForm(data, prefix='def_assistant', instance=None)
-        claim_admin_form = ClaimAdministratorOptionalForm(data, prefix='claim_admin', instance=None)
-        claim_adjuster_form = ClaimAdjusterOptionalForm(data, prefix='claim_adjuster', instance=None)
+        insurance_form = InsuranceCarrierChoiceForm(data, prefix='insurance', instance=None)
+        def_lawfirm_form = DefenseLawFirmChoiceForm(data, prefix='def_lawfirm', instance=None)
+        def_attorney_form = DefenseAttorneyChoiceForm(data, prefix='def_attorney', instance=None)
+        def_assistant_form = DefenseAssistantChoiceForm(data, prefix='def_assistant', instance=None)
+        claim_admin_form = ClaimAdministratorChoiceForm(data, prefix='claim_admin', instance=None)
+        claim_adjuster_form = ClaimAdjusterChoiceForm(data, prefix='claim_adjuster', instance=None)
         
         # Formsets para contactos
         claim_adjuster_contact_formset = ClaimAdjusterContactFormSet(
@@ -176,11 +213,16 @@ class CreateCase(View):
             defense_attorney_contact_formset.is_valid(),
             defense_assistant_contact_formset.is_valid(),
         ])
+
         
         if all_forms_valid:
             # Guardar instancias OBLIGATORIAS
-            client = client_form.save()
+            client = client_form.save() 
+
+            print(client) 
             employer = employer_form.save()
+
+            print(employer)
             
             # Guardar Case con las relaciones obligatorias
             case = case_form.save(commit=False)
@@ -254,15 +296,13 @@ class CreateCase(View):
             'create_form':1,
         }
         return render(request, 'create-case.html', context)
-
+ 
 @method_decorator(login_required, name='dispatch')
 class UpdateCase(View):
     
     def get(self, request, pk):
-        # Obtener la instancia principal del Case
         case = get_object_or_404(Case, id=pk)
         
-        # Obtener las instancias relacionadas
         client = case.client
         employer = case.employer
         insurance = case.insurance
@@ -272,20 +312,20 @@ class UpdateCase(View):
         claim_admin = case.claim_admin
         claim_adjuster = case.claim_adjuster
         
-        # Inicializar formularios con las instancias existentes
+        # Forms normales (siempre con instance)
         case_form = CaseForm(prefix='case', instance=case)
         client_form = ClientForm(prefix='client', instance=client)
         employer_form = EmployerForm(prefix='employer', instance=employer)
         
-        # Usar OptionalModelForm para los que pueden ser nulos
-        insurance_form = InsuranceCarrierOptionalForm(prefix='insurance', instance=insurance) if insurance else InsuranceCarrierOptionalForm(prefix='insurance')
-        def_lawfirm_form = DefenseLawFirmOptionalForm(prefix='def_lawfirm', instance=def_lawfirm) if def_lawfirm else DefenseLawFirmOptionalForm(prefix='def_lawfirm')
-        def_attorney_form = DefenseAttorneyOptionalForm(prefix='def_attorney', instance=def_attorney) if def_attorney else DefenseAttorneyOptionalForm(prefix='def_attorney')
-        def_assistant_form = DefenseAssistantOptionalForm(prefix='def_assistant', instance=def_assistant) if def_assistant else DefenseAssistantOptionalForm(prefix='def_assistant')
-        claim_admin_form = ClaimAdministratorOptionalForm(prefix='claim_admin', instance=claim_admin) if claim_admin else ClaimAdministratorOptionalForm(prefix='claim_admin')
-        claim_adjuster_form = ClaimAdjusterOptionalForm(prefix='claim_adjuster', instance=claim_adjuster) if claim_adjuster else ClaimAdjusterOptionalForm(prefix='claim_adjuster')
+        # Forms opcionales: normal si existe, choice si no
+        insurance_form = InsuranceCarrierForm(prefix='insurance', instance=insurance) if insurance else InsuranceCarrierChoiceForm(prefix='insurance')
+        def_lawfirm_form = DefenseLawFirmForm(prefix='def_lawfirm', instance=def_lawfirm) if def_lawfirm else DefenseLawFirmChoiceForm(prefix='def_lawfirm')
+        def_attorney_form = DefenseAttorneyForm(prefix='def_attorney', instance=def_attorney) if def_attorney else DefenseAttorneyChoiceForm(prefix='def_attorney')
+        def_assistant_form = DefenseAssistantForm(prefix='def_assistant', instance=def_assistant) if def_assistant else DefenseAssistantChoiceForm(prefix='def_assistant')
+        claim_admin_form = ClaimAdministratorForm(prefix='claim_admin', instance=claim_admin) if claim_admin else ClaimAdministratorChoiceForm(prefix='claim_admin')
+        claim_adjuster_form = ClaimAdjusterForm(prefix='claim_adjuster', instance=claim_adjuster) if claim_adjuster else ClaimAdjusterChoiceForm(prefix='claim_adjuster')
         
-        # Inicializar formsets con las instancias relacionadas
+        # Formsets
         injury_formset = InjuryFormSet(prefix='injuries', instance=case, queryset=case.injuries.filter(active=True))
         client_contact_formset = ClientContactFormSet(prefix='client_contacts', instance=client, queryset=client.contacts.filter(active=True))
         claim_adjuster_contact_formset = ClaimAdjusterContactFormSet(prefix='claim_adjuster_contacts', instance=claim_adjuster, queryset=claim_adjuster.contacts.filter(active=True)) if claim_adjuster else ClaimAdjusterContactFormSet(prefix='claim_adjuster_contacts')
@@ -302,8 +342,7 @@ class UpdateCase(View):
             'def_assistant_form': def_assistant_form,
             'claim_admin_form': claim_admin_form,
             'claim_adjuster_form': claim_adjuster_form,
-
-            'injury_formset':injury_formset,
+            'injury_formset': injury_formset,
             'client_contact_formset': client_contact_formset,
             'claim_adjuster_contact_formset': claim_adjuster_contact_formset,
             'def_attorney_contact_formset': defense_attorney_contact_formset,
@@ -315,7 +354,7 @@ class UpdateCase(View):
         data = request.POST
         case = get_object_or_404(Case, id=pk)
         
-        # Obtener las instancias relacionadas existentes
+        # Obtener instancias existentes
         client = case.client
         employer = case.employer
         insurance = case.insurance
@@ -325,26 +364,26 @@ class UpdateCase(View):
         claim_admin = case.claim_admin
         claim_adjuster = case.claim_adjuster
         
-        # Formulario principal del Case con la instancia existente
+        # Formulario principal
         case_form = CaseForm(data, prefix='case', instance=case)
         
         # Forms OBLIGATORIOS
         client_form = ClientForm(data, prefix='client', instance=client)
         employer_form = EmployerForm(data, prefix='employer', instance=employer)
         
-        # Forms OPCIONALES (actualizando las instancias existentes si las hay)
-        insurance_form = InsuranceCarrierOptionalForm(data, prefix='insurance', instance=insurance) if insurance else InsuranceCarrierOptionalForm(data, prefix='insurance')
-        def_lawfirm_form = DefenseLawFirmOptionalForm(data, prefix='def_lawfirm', instance=def_lawfirm) if def_lawfirm else DefenseLawFirmOptionalForm(data, prefix='def_lawfirm')
-        def_attorney_form = DefenseAttorneyOptionalForm(data, prefix='def_attorney', instance=def_attorney) if def_attorney else DefenseAttorneyOptionalForm(data, prefix='def_attorney')
-        def_assistant_form = DefenseAssistantOptionalForm(data, prefix='def_assistant', instance=def_assistant) if def_assistant else DefenseAssistantOptionalForm(data, prefix='def_assistant')
-        claim_admin_form = ClaimAdministratorOptionalForm(data, prefix='claim_admin', instance=claim_admin) if claim_admin else ClaimAdministratorOptionalForm(data, prefix='claim_admin')
-        claim_adjuster_form = ClaimAdjusterOptionalForm(data, prefix='claim_adjuster', instance=claim_adjuster) if claim_adjuster else ClaimAdjusterOptionalForm(data, prefix='claim_adjuster')
+        # ✅ MISMA LÓGICA QUE GET: normal si existe, choice si no
+        insurance_form = InsuranceCarrierForm(data, prefix='insurance', instance=insurance) if insurance else InsuranceCarrierChoiceForm(data, prefix='insurance')
+        def_lawfirm_form = DefenseLawFirmForm(data, prefix='def_lawfirm', instance=def_lawfirm) if def_lawfirm else DefenseLawFirmChoiceForm(data, prefix='def_lawfirm')
+        def_attorney_form = DefenseAttorneyForm(data, prefix='def_attorney', instance=def_attorney) if def_attorney else DefenseAttorneyChoiceForm(data, prefix='def_attorney')
+        def_assistant_form = DefenseAssistantForm(data, prefix='def_assistant', instance=def_assistant) if def_assistant else DefenseAssistantChoiceForm(data, prefix='def_assistant')
+        claim_admin_form = ClaimAdministratorForm(data, prefix='claim_admin', instance=claim_admin) if claim_admin else ClaimAdministratorChoiceForm(data, prefix='claim_admin')
+        claim_adjuster_form = ClaimAdjusterForm(data, prefix='claim_adjuster', instance=claim_adjuster) if claim_adjuster else ClaimAdjusterChoiceForm(data, prefix='claim_adjuster')
         
-        # ✅ CORREGIDO: Formsets con instance desde el principio
+        # Formsets
         injury_formset = InjuryFormSet(data, prefix='injuries', instance=case, queryset=case.injuries.all())
         client_contact_formset = ClientContactFormSet(data, prefix='client_contacts', instance=client, queryset=client.contacts.all())
         
-        # Formsets opcionales con instance solo si existen
+        # Formsets opcionales
         claim_adjuster_contact_formset = None
         defense_attorney_contact_formset = None
         defense_assistant_contact_formset = None
@@ -376,81 +415,80 @@ class UpdateCase(View):
         else:
             defense_assistant_contact_formset = DefenseAssistantContactFormSet(data, prefix='def_assistant_contacts')
         
-        # Validar formularios obligatorios
-        required_forms_valid = all([
+        # ✅ VALIDAR TODOS LOS FORMS
+        all_forms_valid = all([
             case_form.is_valid(),
             client_form.is_valid(),
             employer_form.is_valid(),
+            insurance_form.is_valid(),
+            def_lawfirm_form.is_valid(),
+            def_attorney_form.is_valid(),
+            def_assistant_form.is_valid(),
+            claim_admin_form.is_valid(),
+            claim_adjuster_form.is_valid(),
+            injury_formset.is_valid(),
             client_contact_formset.is_valid(),
-            injury_formset.is_valid(),  # ✅ Añadido aquí
+            claim_adjuster_contact_formset.is_valid(),
+            defense_attorney_contact_formset.is_valid(),
+            defense_assistant_contact_formset.is_valid(),
         ])
         
-        # Validar formsets opcionales
-        optional_formsets_valid = True
-        if claim_adjuster_contact_formset:
-            optional_formsets_valid = optional_formsets_valid and claim_adjuster_contact_formset.is_valid()
-        if defense_attorney_contact_formset:
-            optional_formsets_valid = optional_formsets_valid and defense_attorney_contact_formset.is_valid()
-        if defense_assistant_contact_formset:
-            optional_formsets_valid = optional_formsets_valid and defense_assistant_contact_formset.is_valid()
-        
-        if required_forms_valid and optional_formsets_valid:
-            # Guardar instancias obligatorias
+        if all_forms_valid:
+            # Guardar obligatorios
             client = client_form.save()
             employer = employer_form.save()
+            
+            # ✅ FUNCIÓN HELPER para guardar forms opcionales
+            def save_optional_form(form, existing_instance):
+                """Guarda un form opcional (puede ser ModelForm o ChoiceForm)"""
+                if form.has_changed():
+                    # Si es ChoiceForm, tiene cleaned_data con _existing_object
+                    # Si es ModelForm normal, guarda normalmente
+                    if hasattr(form, 'cleaned_data') and '_existing_object' in form.cleaned_data:
+                        return form.cleaned_data['_existing_object']
+                    return form.save()
+                return existing_instance
+            
+            # Guardar opcionales
+            new_insurance = save_optional_form(insurance_form, insurance)
+            new_def_lawfirm = save_optional_form(def_lawfirm_form, def_lawfirm)
+            new_def_attorney = save_optional_form(def_attorney_form, def_attorney)
+            new_def_assistant = save_optional_form(def_assistant_form, def_assistant)
+            new_claim_admin = save_optional_form(claim_admin_form, claim_admin)
+            new_claim_adjuster = save_optional_form(claim_adjuster_form, claim_adjuster)
             
             # Actualizar Case
             case = case_form.save(commit=False)
             case.client = client
             case.employer = employer
-            
-            # Procesar forms opcionales (guardar solo si tienen datos)
-            new_insurance = insurance_form.save()
-            new_def_lawfirm = def_lawfirm_form.save()
-            new_def_attorney = def_attorney_form.save()
-            new_def_assistant = def_assistant_form.save()
-            new_claim_admin = claim_admin_form.save()
-            new_claim_adjuster = claim_adjuster_form.save()
-            
-            # Actualizar relaciones del case
-            case.insurance = new_insurance if new_insurance else None
-            case.def_lawfirm = new_def_lawfirm if new_def_lawfirm else None
-            case.def_attorney = new_def_attorney if new_def_attorney else None
-            case.def_assistant = new_def_assistant if new_def_assistant else None
-            case.claim_admin = new_claim_admin if new_claim_admin else None
-            case.claim_adjuster = new_claim_adjuster if new_claim_adjuster else None
-            
+            case.insurance = new_insurance
+            case.def_lawfirm = new_def_lawfirm
+            case.def_attorney = new_def_attorney
+            case.def_assistant = new_def_assistant
+            case.claim_admin = new_claim_admin
+            case.claim_adjuster = new_claim_adjuster
             case.save()
             
-            # ✅ CORREGIDO: Guardar injury_formset (ya tiene instance=case)
+            # Guardar formsets
             injury_formset.save()
-            
-            # Guardar client_contact_formset
             client_contact_formset.save()
             
             # Guardar formsets opcionales
             if new_claim_adjuster:
                 claim_adjuster_contact_formset.instance = new_claim_adjuster
                 claim_adjuster_contact_formset.save()
-            elif claim_adjuster and not new_claim_adjuster:
-                # Opcional: eliminar contactos del claim_adjuster eliminado
-                ClaimAdjusterContact.objects.filter(claim_adjuster=claim_adjuster).delete()
             
             if new_def_attorney:
                 defense_attorney_contact_formset.instance = new_def_attorney
                 defense_attorney_contact_formset.save()
-            elif def_attorney and not new_def_attorney:
-                DefenseAttorneyContact.objects.filter(defense_attorney=def_attorney).delete()
             
             if new_def_assistant:
                 defense_assistant_contact_formset.instance = new_def_assistant
                 defense_assistant_contact_formset.save()
-            elif def_assistant and not new_def_assistant:
-                DefenseAssistantContact.objects.filter(defense_assistant=def_assistant).delete()
             
             return redirect('case')
         
-        # Si hay errores, devolver el template con los datos ingresados
+        # Si hay errores, devolver template
         context = {
             'case_form': case_form,
             'client_form': client_form,
@@ -468,7 +506,6 @@ class UpdateCase(View):
             'def_assistant_contact_formset': defense_assistant_contact_formset,
         }
         return render(request, 'create-case.html', context)
-    
 @method_decorator(login_required, name='dispatch')
 class DetailCase(DetailView):
     model = Case
@@ -515,1319 +552,1338 @@ class ListCases(ListView):
     model = Case
     template_name = 'list-cases.html'
     context_object_name = 'items'
+    paginate_by = 20  # Opcional: paginación
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        search_value = self.request.GET.get('search') 
-        
-        added_context = CaseContext(self.request)
         context['detail_url'] = True
         context['list_url'] = 'case'
-        return context | added_context 
-
-def CaseStatusContext(request, form_class=CaseStatusForm(), return_query=True): 
-    search = request.GET.get('search')
-    if not search: search = ""
-
-    context = {
-        'name':'Case Status',
-        'form':form_class,
-        'list_url':'status',
-        'search':search,
-        'create_active':False,
-        'update_active':False,
-        'delete_active':False,
-        'restore_active':False,
-    }
-
-    if not return_query:
+        
+        # Agregar contexto con filtros
+        filter_context = CaseContext(self.request)
+        context.update(filter_context)
+        
         return context
-    
-    queryset = CaseStatus.objects.filter(Q(name__icontains=search) | Q(id__icontains=search))
-    context['items'] = queryset
 
-    return context
+ 
+# ============================================================
+# BASES REUTILIZABLES (definidas aquí mismo para el ejemplo)
+# ============================================================
 
 @method_decorator(login_required, name='dispatch')
-class ListCaseStatus(ListView):
-    model = CaseStatus
-    template_name = 'show/show-status.html'
+class BaseListView(ListView):
+    # ListView base con contexto automático
+    template_name = None
     context_object_name = 'items'
-
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        search_value = self.request.GET.get('search') 
-        
-        added_context = CaseStatusContext(self.request)
-        return context | added_context 
+        if hasattr(self, 'get_context_function'):
+            added_context = self.get_context_function(self.request)
+            context.update(added_context)
+        return context
 
-@method_decorator(login_required, name='dispatch')    
-class CreateStatus(CreateView):
-    model = CaseStatus
-    form_class = CaseStatusForm
-    success_url = reverse_lazy('status')
-    template_name = 'show/show-status.html'
-    
-    def form_invalid(self, form):  
-        search = self.request.GET.get('search')
 
-        context = CaseStatusContext(self.request, form) 
+@method_decorator(login_required, name='dispatch')
+class BaseCreateView(CreateView):
+    # CreateView base con manejo automático 
+    template_name = None
+    success_message = "registro creado exitosamente"
+
+    def get(self, request, *args, **kwargs):
+        # Maneja la petición GET - muestra el formulario vacío 
+        form = self.get_form()
+        context = self.get_context_function(request, form)
         context['create_active'] = True
-        
         return self.render_to_response(context)
-
-@method_decorator(login_required, name='dispatch')
-class UpdateStatus(UpdateView):
-    model = CaseStatus
-    form_class = CaseStatusForm
-    success_url = reverse_lazy('status')
-    template_name = 'show/show-status.html' 
     
-    def form_invalid(self, form): 
-        search = self.request.GET.get('search')
+    def post(self, request, *args, **kwargs):
+        # Maneja la petición POST - procesa el formulario 
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+    
+    def form_invalid(self, form):
+        context = self.get_context_function(self.request, form)
+        context['create_active'] = True
+        return self.render_to_response(context)
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, self.success_message)
+        return response
 
-        context = CaseStatusContext(self.request, form) 
-        context['update_active'] = True
-        context['temp_name'] = self.get_object().name
-        
-        return self.render_to_response(context) 
-
-@method_decorator(login_required, name='dispatch')    
-class DeleteStatus(View):
-    def post(self, request, pk):
-        status = CaseStatus.objects.get(id=pk) 
-        status.soft_delete()
-
-        return redirect('status')
 
 @method_decorator(login_required, name='dispatch')
-class RestoreStatus(View):
+class BaseUpdateView(UpdateView):
+    # UpdateView base con manejo automático
+    template_name = None
+    success_message = "registro modificado exitosamente"
+
+    def get(self, request, *args, **kwargs):
+        # Maneja la petición GET - muestra el formulario con datos del objeto
+        self.object = self.get_object()
+        form = self.get_form() 
+        context = self.get_context_function(request, form)
+        context['update_active'] = True
+        context['temp_name'] = self.object
+        return self.render_to_response(context)
+    
+    def post(self, request, *args, **kwargs):
+        # Maneja la petición POST - procesa el formulario
+        self.object = self.get_object()
+        form = self.get_form()
+
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+    
+    def form_invalid(self, form):
+        context = self.get_context_function(self.request, form)
+        context['update_active'] = True
+        context['temp_name'] = self.get_object()
+        return self.render_to_response(context)
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, self.success_message)
+        return response 
+
+@method_decorator(login_required, name='dispatch')
+class BaseDeleteView(View):
+
+    # DeleteView base
+    model = None
+    redirect_url = None  # URL de lista, ej: 'status'
+    success_message = "registro eliminado exitosamente"
+    
+    def has_related_cases(self, obj):
+        """Verifica si el objeto tiene casos relacionados"""
+        if hasattr(obj, 'cases'):
+            if obj.cases.filter(active=True).exists():
+                return True
+        return False
+    
+    def get_related_cases_count(self, obj):
+        """Retorna el número de casos relacionados"""
+        if hasattr(obj, 'cases'):
+            return obj.cases.filter(active=True).count()
+        return 0
+    
+    def get(self, request, pk):
+        """Maneja GET - muestra la lista con el modal activo"""
+        obj = self.model.objects.get(id=pk)
+
+        context = self.get_context_function(request)
+        context['delete_active'] = True
+        context['temp_name'] = obj.name 
+
+        # Verificar si tiene casos relacionados
+        if self.has_related_cases(obj):
+            count = self.get_related_cases_count(obj)
+            error_msg = f"Cannot delete '{obj.name}'. It has {count} case(s) related"
+            context['error_msg'] = error_msg
+            return render(request, self.template_name, context )
+         
+        return redirect(self.redirect_url)
+    
     def post(self, request, pk):
-        status = CaseStatus.objects.get(id=pk)
-        status.restore()
+        obj = self.model.objects.get(id=pk)
+        
+        # Verificar nuevamente por si acaso
+        if self.has_related_cases(obj):
+            count = self.get_related_cases_count(obj)
+            error_msg = f"Cannot delete '{obj.name}'. It has {count} case(s) related"
+            messages.error(request, error_msg)
+            # ✅ Redirigir al GET (misma URL) para mostrar el modal con error
+            return redirect(request.path)
+        
+        # Proceder con el soft delete
+        obj.soft_delete()
+        messages.success(request, self.success_message)
+        return redirect(self.redirect_url)
 
-        return redirect('status')
 
-# Contexto para Attorney
-def AttorneyContext(request, form_class=SystemAttorneyForm(), return_query=True):
-    search = request.GET.get('search')
-    if not search: 
-        search = ""
+@method_decorator(login_required, name='dispatch')
+class BaseRestoreView(View):
+    # RestoreView base
+    model = None
+    redirect_url = None
+    success_message = "registro restaurado exitosamente"
+    
+    def post(self, request, pk):
+        obj = self.model.objects.get(id=pk)
+        obj.restore()
+        messages.success(request, self.success_message)
+        return redirect(self.redirect_url)
 
+
+# ============================================================
+# CASE STATUS
+# ============================================================
+
+def case_status_context(request, form=CaseStatusForm(), return_query=True):
+    search = request.GET.get('search', '')
+    
     context = {
-        'name': 'Attorney',
-        'form': form_class,
-        'list_url':'attorney',
+        'name': 'Case Status',
+        'form': form,
+        'list_url': 'status',
         'search': search,
-        'update_form':SystemAttorneyUpdateForm,
         'create_active': False,
         'update_active': False,
         'delete_active': False,
         'restore_active': False,
     }
-
-    if not return_query:
-        return context
     
-    queryset = Attorney.objects.filter(
-        Q(name__icontains=search) | Q(id__icontains=search)
-    )
-    context['items'] = queryset
-
+    if return_query:
+        queryset = CaseStatus.objects.filter(
+            Q(name__icontains=search) | Q(id__icontains=search)
+        )
+        if request.user.systemuser.role != "admin":
+            queryset = queryset.filter(active=True)
+        context['items'] = queryset
+    
+    
     return context
 
+
 @method_decorator(login_required, name='dispatch')
-class ListAttorney(ListView):
-    model = Attorney
-    template_name = 'show/show-attorney.html'  # Nueva plantilla
-    context_object_name = 'items'
+class ListCaseStatus(BaseListView):
+    model = CaseStatus
+    template_name = 'show/show-status.html'
+    
+    def get_context_function(self, request):
+        return case_status_context(request)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        search_value = self.request.GET.get('search', '')
+
+@method_decorator(login_required, name='dispatch')
+class CreateCaseStatus(BaseCreateView):
+    model = CaseStatus
+    form_class = CaseStatusForm
+    success_url = reverse_lazy('status')
+    template_name = 'show/show-status.html'
+    success_message = "Case Status creado exitosamente"
+    
+    def get_context_function(self, request, form):
         
-        added_context = AttorneyContext(self.request)
-        return context | added_context
+        return case_status_context(request, form)
 
-@method_decorator(login_required, name='dispatch')    
-class CreateAttorney(CreateView):
+
+@method_decorator(login_required, name='dispatch')
+class UpdateCaseStatus(BaseUpdateView):
+    model = CaseStatus
+    form_class = CaseStatusForm
+    success_url = reverse_lazy('status')
+    template_name = 'show/show-status.html'
+    success_message = "Case Status modificado exitosamente"
+    
+    def get_context_function(self, request, form):
+        return case_status_context(request, form)
+
+
+@method_decorator(login_required, name='dispatch')
+class DeleteCaseStatus(BaseDeleteView):
+    model = CaseStatus
+    redirect_url = 'status'
+    template_name = 'show/show-status.html'
+    success_message = "Case Status eliminado exitosamente"
+
+    def get_context_function(self, request):
+        return case_status_context(request)
+
+
+@method_decorator(login_required, name='dispatch')
+class RestoreCaseStatus(BaseRestoreView):
+    model = CaseStatus
+    redirect_url = 'status'
+    success_message = "Case Status restaurado exitosamente"
+
+
+# ============================================================
+# ATTORNEY
+# ============================================================
+
+def attorney_context(request, form=SystemAttorneyForm(), return_query=True):
+    search = request.GET.get('search', '')
+    
+    context = {
+        'name': 'Attorney',
+        'form': form,
+        'list_url': 'attorney',
+        'search': search,
+        'form': SystemAttorneyForm,
+        'update_form': SystemAttorneyUpdateForm,
+        'create_active': False,
+        'update_active': False,
+        'delete_active': False,
+        'restore_active': False,
+    }
+    
+    if return_query:
+        queryset = Attorney.objects.filter(
+            Q(name__icontains=search) | Q(id__icontains=search)
+        )
+        if request.user.systemuser.role != "admin":
+            queryset = queryset.filter(active=True)
+        context['items'] = queryset
+    
+    
+    return context
+
+
+@method_decorator(login_required, name='dispatch')
+class ListAttorney(BaseListView):
     model = Attorney
-    form_class = SystemAttorneyForm
-    success_url = reverse_lazy('attorney')  # Cambiar URL name
     template_name = 'show/show-attorney.html'
     
-    def form_invalid(self, form):  
-        search = self.request.GET.get('search', '')
-        context = AttorneyContext(self.request, form) 
-        context['create_active'] = True
-        return self.render_to_response(context)
+    def get_context_function(self, request):
+        return attorney_context(request)
+
 
 @method_decorator(login_required, name='dispatch')
-class UpdateAttorney(UpdateView):
+class CreateAttorney(BaseCreateView):
+    model = Attorney
+    form_class = SystemAttorneyForm
+    success_url = reverse_lazy('attorney')
+    template_name = 'show/show-attorney.html'
+    success_message = "Attorney creado exitosamente"
+    
+    def get_context_function(self, request, form):
+        return attorney_context(request, form) 
+
+
+@method_decorator(login_required, name='dispatch')
+class UpdateAttorney(BaseUpdateView):
     model = Attorney
     form_class = SystemAttorneyUpdateForm
     success_url = reverse_lazy('attorney')
     template_name = 'show/show-attorney.html'
+    success_message = "Attorney modificado exitosamente"
     
-    def form_invalid(self, form): 
-        search = self.request.GET.get('search', '')
-        context = AttorneyContext(self.request, form) 
-        context['update_active'] = True
-        context['temp_name'] = self.get_object().name
-        return self.render_to_response(context)
+    def get_context_function(self, request, form):
+        return attorney_context(request, form)
 
-@method_decorator(login_required, name='dispatch')    
-class DeleteAttorney(View):
-    def post(self, request, pk):
-        attorney = Attorney.objects.get(id=pk) 
-        attorney.soft_delete()
-        return redirect('attorney')
 
 @method_decorator(login_required, name='dispatch')
-class RestoreAttorney(View):
-    def post(self, request, pk):
-        attorney = Attorney.objects.get(id=pk)
-        attorney.restore()
-        return redirect('attorney')
-    
-# Contexto para Assistant
-def AssistantContext(request, form_class=SystemAssistantForm(), return_query=True):
-    search = request.GET.get('search') 
-    if not search: 
-        search = ""
+class DeleteAttorney(BaseDeleteView):
+    model = Attorney
+    redirect_url = 'attorney'
+    template_name = 'show/show-attorney.html'
+    success_message = "Attorney eliminado exitosamente"
 
+    def get_context_function(self, request):
+        return attorney_context(request)
+
+
+@method_decorator(login_required, name='dispatch')
+class RestoreAttorney(BaseRestoreView):
+    model = Attorney
+    redirect_url = 'attorney'
+    success_message = "Attorney restaurado exitosamente"
+
+
+# ============================================================
+# ASSISTANT
+# ============================================================
+
+def assistant_context(request, form=SystemAssistantForm(), return_query=True):
+    search = request.GET.get('search', '')
+    
     context = {
         'name': 'Assistant',
-        'form': form_class,
-        'list_url':'assistant',
+        'form': form,
+        'list_url': 'assistant',
         'search': search,
-        'update_form':SystemAssistantUpdateForm,
+        'update_form': SystemAssistantUpdateForm,
         'create_active': False,
         'update_active': False,
         'delete_active': False,
         'restore_active': False,
     }
-
-    if not return_query:
-        return context
     
-    queryset = Assistant.objects.filter(
-        Q(name__icontains=search) | Q(id__icontains=search)
-    )
-    context['items'] = queryset
-
+    if return_query:
+        queryset = Assistant.objects.filter(
+            Q(name__icontains=search) | Q(id__icontains=search)
+        )
+        if request.user.systemuser.role != "admin":
+            queryset = queryset.filter(active=True)
+        context['items'] = queryset
+    
+    
     return context
 
-@method_decorator(login_required, name='dispatch')
-class ListAssistant(ListView):
-    model = Assistant
-    template_name = 'show/show-assistant.html'  # Template específico
-    context_object_name = 'items'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        search_value = self.request.GET.get('search', '')
-        
-        added_context = AssistantContext(self.request)
-        return context | added_context
 
 @method_decorator(login_required, name='dispatch')
-class CreateAssistant(CreateView):
+class ListAssistant(BaseListView):
     model = Assistant
-    form_class = SystemAssistantForm
-    success_url = reverse_lazy('assistant')  # Asumiendo que usas 'assistant' como nombre de URL
     template_name = 'show/show-assistant.html'
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = AssistantContext(self.request, form)
-        context['create_active'] = True
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Assistant creado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request):
+        return assistant_context(request)
+
 
 @method_decorator(login_required, name='dispatch')
-class UpdateAssistant(UpdateView):
+class CreateAssistant(BaseCreateView):
+    model = Assistant
+    form_class = SystemAssistantForm
+    success_url = reverse_lazy('assistant')
+    template_name = 'show/show-assistant.html'
+    success_message = "Assistant creado exitosamente"
+    
+    def get_context_function(self, request, form):
+        return assistant_context(request, form)
+
+
+@method_decorator(login_required, name='dispatch')
+class UpdateAssistant(BaseUpdateView):
     model = Assistant
     form_class = SystemAssistantUpdateForm
     success_url = reverse_lazy('assistant')
     template_name = 'show/show-assistant.html'
+    success_message = "Assistant modificado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = AssistantContext(self.request, form)
-        context['update_active'] = True
-        context['object_name'] = self.get_object().name
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Assistant modificado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return assistant_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class DeleteAssistant(View):
-    def post(self, request, pk):
-        assistant = Assistant.objects.get(id=pk)
-        assistant.soft_delete()
-        return redirect('assistant')
+class DeleteAssistant(BaseDeleteView):
+    model = Assistant
+    redirect_url = 'assistant'
+    template_name = 'show/show-assistant.html'
+    success_message = "Assistant eliminado exitosamente"
+
+    def get_context_function(self, request):
+        return assistant_context(request)
+
 
 @method_decorator(login_required, name='dispatch')
-class RestoreAssistant(View):
-    def post(self, request, pk):
-        assistant = Assistant.objects.get(id=pk)
-        assistant.restore()
-        return redirect('assistant')
-    
-def EmployerContext(request, form_class=EmployerForm(), return_query=True):
-    search = request.GET.get('search')
-    if not search: 
-        search = ""
+class RestoreAssistant(BaseRestoreView):
+    model = Assistant
+    redirect_url = 'assistant'
+    success_message = "Assistant restaurado exitosamente"
 
+
+# ============================================================
+# EMPLOYER
+# ============================================================
+
+def employer_context(request, form=EmployerForm(), return_query=True):
+    search = request.GET.get('search', '')
+    
     context = {
         'name': 'Employer',
-        'form': form_class,
-        'list_url':'employer',
+        'form': form,
+        'list_url': 'employer',
         'search': search,
         'create_active': False,
         'update_active': False,
         'delete_active': False,
         'restore_active': False,
     }
-
-    if not return_query:
-        return context
     
-    queryset = Employer.objects.filter(
-        Q(name__icontains=search) | 
-        Q(id__icontains=search) |
-        Q(address__icontains=search)
-    )
-    context['items'] = queryset
-
+    if return_query:
+        queryset = Employer.objects.filter(
+            Q(name__icontains=search) | 
+            Q(id__icontains=search) |
+            Q(address__icontains=search)
+        )
+        if request.user.systemuser.role != "admin":
+            queryset = queryset.filter(active=True)
+        context['items'] = queryset
+    
+    
     return context
 
+
 @method_decorator(login_required, name='dispatch')
-class ListEmployer(ListView):
+class ListEmployer(BaseListView):
     model = Employer
     template_name = 'show/show-employer.html'
-    context_object_name = 'items'
+    
+    def get_context_function(self, request):
+        return employer_context(request)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        search_value = self.request.GET.get('search', '')
-        
-        added_context = EmployerContext(self.request)
-        return context | added_context
 
 @method_decorator(login_required, name='dispatch')
-class CreateEmployer(CreateView):
+class CreateEmployer(BaseCreateView):
     model = Employer
     form_class = EmployerForm
     success_url = reverse_lazy('employer')
     template_name = 'show/show-employer.html'
+    success_message = "Employer creado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = EmployerContext(self.request, form)
-        context['create_active'] = True
-        return self.render_to_response(context)
+    def get_context_function(self, request, form):
+        return employer_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class UpdateEmployer(UpdateView):
+class UpdateEmployer(BaseUpdateView):
     model = Employer
     form_class = EmployerForm
     success_url = reverse_lazy('employer')
     template_name = 'show/show-employer.html'
+    success_message = "Employer modificado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = EmployerContext(self.request, form)
-        context['update_active'] = True
-        context['object_name'] = self.get_object().name
-        return self.render_to_response(context)
+    def get_context_function(self, request, form):
+        return employer_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class DeleteEmployer(View):
-    def post(self, request, pk):
-        employer = Employer.objects.get(id=pk)
-        employer.soft_delete()
-        return redirect('employer')
+class DeleteEmployer(BaseDeleteView):
+    model = Employer
+    redirect_url = 'employer'
+    template_name = 'show/show-employer.html'
+    success_message = "Employer eliminado exitosamente"
+
+    def get_context_function(self, request):
+        return employer_context(request)
+
 
 @method_decorator(login_required, name='dispatch')
-class RestoreEmployer(View):
-    def post(self, request, pk):
-        employer = Employer.objects.get(id=pk)
-        employer.restore()
-        return redirect('employer')
-    
-def InsuranceCarrierContext(request, form_class=InsuranceCarrierForm(), return_query=True):
-    search = request.GET.get('search')
-    if not search: 
-        search = ""
+class RestoreEmployer(BaseRestoreView):
+    model = Employer
+    redirect_url = 'employer'
+    success_message = "Employer restaurado exitosamente"
 
+
+# ============================================================
+# INSURANCE CARRIER
+# ============================================================
+
+def insurance_carrier_context(request, form=InsuranceCarrierForm(), return_query=True):
+    search = request.GET.get('search', '')
+    
     context = {
         'name': 'Insurance Carrier',
-        'form': form_class,
-        'list_url':'insurance-carrier',
+        'form': form,
+        'list_url': 'insurance-carrier',
         'search': search,
         'create_active': False,
         'update_active': False,
         'delete_active': False,
         'restore_active': False,
     }
-
-    if not return_query:
-        return context
     
-    queryset = InsuranceCarrier.objects.filter(
-        Q(name__icontains=search) | 
-        Q(id__icontains=search) |
-        Q(address__icontains=search)
-    )
-    context['items'] = queryset
-
+    if return_query:
+        queryset = InsuranceCarrier.objects.filter(
+            Q(name__icontains=search) | 
+            Q(id__icontains=search) |
+            Q(address__icontains=search)
+        )
+        if request.user.systemuser.role != "admin":
+            queryset = queryset.filter(active=True)
+        context['items'] = queryset
+    
+    
     return context
 
+
 @method_decorator(login_required, name='dispatch')
-class ListInsuranceCarrier(ListView):
+class ListInsuranceCarrier(BaseListView):
     model = InsuranceCarrier
     template_name = 'show/show-insurance-carrier.html'
-    context_object_name = 'items'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        search_value = self.request.GET.get('search', '')
-        
-        added_context = InsuranceCarrierContext(self.request)
-        return context | added_context
+    
+    def get_context_function(self, request):
+        return insurance_carrier_context(request)
 
 
 @method_decorator(login_required, name='dispatch')
-class CreateInsuranceCarrier(CreateView):
+class CreateInsuranceCarrier(BaseCreateView):
     model = InsuranceCarrier
     form_class = InsuranceCarrierForm
     success_url = reverse_lazy('insurance-carrier')
     template_name = 'show/show-insurance-carrier.html'
+    success_message = "Insurance Carrier creado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = InsuranceCarrierContext(self.request, form)
-        context['create_active'] = True
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Insurance Carrier creado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return insurance_carrier_context(request, form)
 
 
 @method_decorator(login_required, name='dispatch')
-class UpdateInsuranceCarrier(UpdateView):
+class UpdateInsuranceCarrier(BaseUpdateView):
     model = InsuranceCarrier
     form_class = InsuranceCarrierForm
     success_url = reverse_lazy('insurance-carrier')
     template_name = 'show/show-insurance-carrier.html'
+    success_message = "Insurance Carrier modificado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = InsuranceCarrierContext(self.request, form)
-        context['update_active'] = True
-        context['object_name'] = self.get_object().name
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Insurance Carrier modificado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return insurance_carrier_context(request, form)
 
 
 @method_decorator(login_required, name='dispatch')
-class DeleteInsuranceCarrier(View):
-    def post(self, request, pk):
-        insurance_carrier = InsuranceCarrier.objects.get(id=pk)
-        insurance_carrier.soft_delete()
-        messages.success(request, 'Insurance Carrier eliminado exitosamente')
-        return redirect('insurance-carrier')
+class DeleteInsuranceCarrier(BaseDeleteView):
+    model = InsuranceCarrier
+    redirect_url = 'insurance-carrier'
+    template_name = 'show/show-insurance-carrier.html'
+    success_message = "Insurance Carrier eliminado exitosamente"
+
+    def get_context_function(self, request):
+        return insurance_carrier_context(request)
 
 
 @method_decorator(login_required, name='dispatch')
-class RestoreInsuranceCarrier(View):
-    def post(self, request, pk):
-        insurance_carrier = InsuranceCarrier.objects.get(id=pk)
-        insurance_carrier.restore()
-        messages.success(request, 'Insurance Carrier restaurado exitosamente')
-        return redirect('insurance-carrier')
+class RestoreInsuranceCarrier(BaseRestoreView):
+    model = InsuranceCarrier
+    redirect_url = 'insurance-carrier'
+    success_message = "Insurance Carrier restaurado exitosamente"
+
+
+# ============================================================
+# CLAIM ADMINISTRATOR
+# ============================================================
+
+def claim_administrator_context(request, form=ClaimAdministratorForm(), return_query=True):
+    search = request.GET.get('search', '')
     
-
-
-def ClaimAdministratorContext(request, form_class=ClaimAdministratorForm(), return_query=True):
-    search = request.GET.get('search')
-    if not search: 
-        search = ""
-
     context = {
         'name': 'Claim Administrator',
-        'form': form_class,
-        'list_url':'claim-administrator',
+        'form': form,
+        'list_url': 'claim-administrator',
         'search': search,
         'create_active': False,
         'update_active': False,
         'delete_active': False,
         'restore_active': False,
     }
-
-    if not return_query:
-        return context
     
-    queryset = ClaimAdministrator.objects.filter(
-        Q(name__icontains=search) | 
-        Q(id__icontains=search) |
-        Q(address__icontains=search)
-    )
-    context['items'] = queryset
-
+    if return_query:
+        queryset = ClaimAdministrator.objects.filter(
+            Q(name__icontains=search) | 
+            Q(id__icontains=search) |
+            Q(address__icontains=search)
+        )
+        if request.user.systemuser.role != "admin":
+            queryset = queryset.filter(active=True)
+        context['items'] = queryset
+    
     return context
 
+
 @method_decorator(login_required, name='dispatch')
-class ListClaimAdministrator(ListView):
+class ListClaimAdministrator(BaseListView):
     model = ClaimAdministrator
     template_name = 'show/show-claim-administrator.html'
-    context_object_name = 'items'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        search_value = self.request.GET.get('search', '')
-        
-        added_context = ClaimAdministratorContext(self.request)
-        return context | added_context
+    
+    def get_context_function(self, request):
+        return claim_administrator_context(request)
 
 
 @method_decorator(login_required, name='dispatch')
-class CreateClaimAdministrator(CreateView):
+class CreateClaimAdministrator(BaseCreateView):
     model = ClaimAdministrator
     form_class = ClaimAdministratorForm
     success_url = reverse_lazy('claim-administrator')
     template_name = 'show/show-claim-administrator.html'
+    success_message = "Claim Administrator creado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = ClaimAdministratorContext(self.request, form)
-        context['create_active'] = True
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Claim Administrator creado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return claim_administrator_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class UpdateClaimAdministrator(UpdateView):
+class UpdateClaimAdministrator(BaseUpdateView):
     model = ClaimAdministrator
     form_class = ClaimAdministratorForm
     success_url = reverse_lazy('claim-administrator')
     template_name = 'show/show-claim-administrator.html'
+    success_message = "Claim Administrator modificado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = ClaimAdministratorContext(self.request, form)
-        context['update_active'] = True
-        context['object_name'] = self.get_object().name
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Claim Administrator modificado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return claim_administrator_context(request, form)
 
 
 @method_decorator(login_required, name='dispatch')
-class DeleteClaimAdministrator(View):
-    def post(self, request, pk):
-        claim_admin = ClaimAdministrator.objects.get(id=pk)
-        claim_admin.soft_delete()
-        messages.success(request, 'Claim Administrator eliminado exitosamente')
-        return redirect('claim-administrator')
+class DeleteClaimAdministrator(BaseDeleteView):
+    model = ClaimAdministrator
+    redirect_url = 'claim-administrator'
+    template_name = 'show/show-claim_administrator.html'
+    success_message = "Claim Administrator eliminado exitosamente"
 
 
 @method_decorator(login_required, name='dispatch')
-class RestoreClaimAdministrator(View):
-    def post(self, request, pk):
-        claim_admin = ClaimAdministrator.objects.get(id=pk)
-        claim_admin.restore()
-        messages.success(request, 'Claim Administrator restaurado exitosamente')
-        return redirect('claim-administrator')
-    
+class RestoreClaimAdministrator(BaseRestoreView):
+    model = ClaimAdministrator
+    redirect_url = 'claim-administrator'
+    success_message = "Claim Administrator restaurado exitosamente"
 
+    def get_context_function(self, request):
+        return claim_administrator_context(request)
+
+
+# ============================================================
 # DEFENSE LAW FIRM
-def DefenseLawFirmContext(request, form_class=DefenseLawFirmForm(), return_query=True):
-    search = request.GET.get('search')
-    if not search: 
-        search = ""
+# ============================================================
 
+def defense_law_firm_context(request, form=DefenseLawFirmForm(), return_query=True):
+    search = request.GET.get('search', '')
+    
     context = {
         'name': 'Defense Law Firm',
-        'form': form_class,
-        'list_url':'defense-law-firm',
+        'form': form,
+        'list_url': 'defense-law-firm',
         'search': search,
         'create_active': False,
         'update_active': False,
         'delete_active': False,
         'restore_active': False,
     }
-
-    if not return_query:
-        return context
     
-    queryset = DefenseLawFirm.objects.filter(
-        Q(name__icontains=search) | 
-        Q(id__icontains=search) |
-        Q(address__icontains=search)
-    )
-    context['items'] = queryset
-
+    if return_query:
+        queryset = DefenseLawFirm.objects.filter(
+            Q(name__icontains=search) | 
+            Q(id__icontains=search) |
+            Q(address__icontains=search)
+        )
+        if request.user.systemuser.role != "admin":
+            queryset = queryset.filter(active=True)
+        context['items'] = queryset
+    
+    
     return context
 
+
 @method_decorator(login_required, name='dispatch')
-class ListDefenseLawFirm(ListView):
+class ListDefenseLawFirm(BaseListView):
     model = DefenseLawFirm
     template_name = 'show/show-defense-law-firm.html'
-    context_object_name = 'items'
+    
+    def get_context_function(self, request):
+        return defense_law_firm_context(request)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        search_value = self.request.GET.get('search', '')
-        
-        added_context = DefenseLawFirmContext(self.request)
-        return context | added_context
 
 @method_decorator(login_required, name='dispatch')
-class CreateDefenseLawFirm(CreateView):
+class CreateDefenseLawFirm(BaseCreateView):
     model = DefenseLawFirm
     form_class = DefenseLawFirmForm
     success_url = reverse_lazy('defense-law-firm')
     template_name = 'show/show-defense-law-firm.html'
+    success_message = "Defense Law Firm creado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = DefenseLawFirmContext(self.request, form)
-        context['create_active'] = True
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Defense Law Firm creado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return defense_law_firm_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class UpdateDefenseLawFirm(UpdateView):
+class UpdateDefenseLawFirm(BaseUpdateView):
     model = DefenseLawFirm
     form_class = DefenseLawFirmForm
     success_url = reverse_lazy('defense-law-firm')
     template_name = 'show/show-defense-law-firm.html'
+    success_message = "Defense Law Firm modificado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = DefenseLawFirmContext(self.request, form)
-        context['update_active'] = True
-        context['object_name'] = self.get_object().name
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Defense Law Firm modificado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return defense_law_firm_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class DeleteDefenseLawFirm(View):
-    def post(self, request, pk):
-        law_firm = DefenseLawFirm.objects.get(id=pk)
-        law_firm.soft_delete()
-        messages.success(request, 'Defense Law Firm eliminado exitosamente')
-        return redirect('defense-law-firm')
+class DeleteDefenseLawFirm(BaseDeleteView):
+    model = DefenseLawFirm
+    redirect_url = 'defense-law-firm'
+    template_name = 'show/show-defense-law-firm.html'
+    success_message = "Defense Law Firm eliminado exitosamente"
+
+    def get_context_function(self, request):
+        return defense_law_firm_context(request)
+
 
 @method_decorator(login_required, name='dispatch')
-class RestoreDefenseLawFirm(View):
-    def post(self, request, pk):
-        law_firm = DefenseLawFirm.objects.get(id=pk)
-        law_firm.restore()
-        messages.success(request, 'Defense Law Firm restaurado exitosamente')
-        return redirect('defense-law-firm')
+class RestoreDefenseLawFirm(BaseRestoreView):
+    model = DefenseLawFirm
+    redirect_url = 'defense-law-firm'
+    success_message = "Defense Law Firm restaurado exitosamente"
+
+
+# ============================================================
+# CLIENT
+# ============================================================
+
+def client_context(request, form=ClientForm(), return_query=True):
+    search = request.GET.get('search', '')
     
-
-def ClientContext(request, form_class=ClientForm(), return_query=True):
-    search = request.GET.get('search')
-    if not search: 
-        search = ""
-
     context = {
         'name': 'Client',
-        'form': form_class,
-        'list_url':'client',
+        'form': form,
+        'list_url': 'client',
         'search': search,
         'create_active': False,
         'update_active': False,
         'delete_active': False,
         'restore_active': False,
     }
-
-    if not return_query:
-        return context
     
-    queryset = Client.objects.filter(
-        Q(name__icontains=search) | 
-        Q(id__icontains=search) |
-        Q(address__icontains=search) |
-        Q(ssn__icontains=search)
-    )
-    context['items'] = queryset
-
+    if return_query:
+        queryset = Client.objects.filter(
+            Q(name__icontains=search) | 
+            Q(id__icontains=search) |
+            Q(address__icontains=search) |
+            Q(ssn__icontains=search)
+        )
+        if request.user.systemuser.role != "admin":
+            queryset = queryset.filter(active=True)
+        context['items'] = queryset
+    
+    
     return context
 
+
 @method_decorator(login_required, name='dispatch')
-class ListClient(ListView):
+class ListClient(BaseListView):
     model = Client
     template_name = 'show/show-client.html'
-    context_object_name = 'items'
+    
+    def get_context_function(self, request):
+        return client_context(request)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        search_value = self.request.GET.get('search', '')
-        
-        added_context = ClientContext(self.request)
-        return context | added_context
 
 @method_decorator(login_required, name='dispatch')
-class CreateClient(CreateView):
+class CreateClient(BaseCreateView):
     model = Client
     form_class = ClientForm
     success_url = reverse_lazy('client')
     template_name = 'show/show-client.html'
+    success_message = "Client creado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = ClientContext(self.request, form)
-        context['create_active'] = True
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Client creado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return client_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class UpdateClient(UpdateView):
+class UpdateClient(BaseUpdateView):
     model = Client
     form_class = ClientForm
     success_url = reverse_lazy('client')
     template_name = 'show/show-client.html'
+    success_message = "Client modificado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = ClientContext(self.request, form)
-        context['update_active'] = True
-        context['object_name'] = self.get_object().name
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Client modificado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return client_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class DeleteClient(View):
-    def post(self, request, pk):
-        client = Client.objects.get(id=pk)
-        client.soft_delete()
-        messages.success(request, 'Client eliminado exitosamente')
-        return redirect('client')
+class DeleteClient(BaseDeleteView):
+    model = Client
+    redirect_url = 'client'
+    template_name = 'show/show-client.html'
+    success_message = "Client eliminado exitosamente"
+
+    def get_context_function(self, request):
+        return client_context(request)
+
 
 @method_decorator(login_required, name='dispatch')
-class RestoreClient(View):
-    def post(self, request, pk):
-        client = Client.objects.get(id=pk)
-        client.restore()
-        messages.success(request, 'Client restaurado exitosamente')
-        return redirect('client')
+class RestoreClient(BaseRestoreView):
+    model = Client
+    redirect_url = 'client'
+    success_message = "Client restaurado exitosamente"
 
-def ClaimAdjusterContext(request, form_class=ClaimAdjusterForm(), return_query=True):
-    search = request.GET.get('search')
-    if not search: 
-        search = ""
 
+# ============================================================
+# CLAIM ADJUSTER
+# ============================================================
+
+def claim_adjuster_context(request, form=ClaimAdjusterForm(), return_query=True):
+    search = request.GET.get('search', '')
+    
     context = {
         'name': 'Claim Adjuster',
-        'form': form_class,
-        'list_url':'claim-adjuster',
+        'form': form,
+        'list_url': 'claim-adjuster',
         'search': search,
         'create_active': False,
         'update_active': False,
         'delete_active': False,
         'restore_active': False,
     }
-
-    if not return_query:
-        return context
     
-    queryset = ClaimAdjuster.objects.filter(
-        Q(name__icontains=search) | 
-        Q(id__icontains=search)
-    )
-    context['items'] = queryset
-
+    if return_query:
+        queryset = ClaimAdjuster.objects.filter(
+            Q(name__icontains=search) | Q(id__icontains=search)
+        )
+        if request.user.systemuser.role != "admin":
+            queryset = queryset.filter(active=True)
+        context['items'] = queryset
+    
+    
     return context
 
+
 @method_decorator(login_required, name='dispatch')
-class ListClaimAdjuster(ListView):
+class ListClaimAdjuster(BaseListView):
     model = ClaimAdjuster
     template_name = 'show/show-claim-adjuster.html'
-    context_object_name = 'items'
+    
+    def get_context_function(self, request):
+        return claim_adjuster_context(request)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        search_value = self.request.GET.get('search', '')
-        
-        added_context = ClaimAdjusterContext(self.request)
-        return context | added_context
 
 @method_decorator(login_required, name='dispatch')
-class CreateClaimAdjuster(CreateView):
+class CreateClaimAdjuster(BaseCreateView):
     model = ClaimAdjuster
     form_class = ClaimAdjusterForm
     success_url = reverse_lazy('claim-adjuster')
     template_name = 'show/show-claim-adjuster.html'
+    success_message = "Claim Adjuster creado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = ClaimAdjusterContext(self.request, form)
-        context['create_active'] = True
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Claim Adjuster creado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return claim_adjuster_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class UpdateClaimAdjuster(UpdateView):
+class UpdateClaimAdjuster(BaseUpdateView):
     model = ClaimAdjuster
     form_class = ClaimAdjusterForm
     success_url = reverse_lazy('claim-adjuster')
     template_name = 'show/show-claim-adjuster.html'
+    success_message = "Claim Adjuster modificado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = ClaimAdjusterContext(self.request, form)
-        context['update_active'] = True
-        context['object_name'] = self.get_object().name
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Claim Adjuster modificado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return claim_adjuster_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class DeleteClaimAdjuster(View):
-    def post(self, request, pk):
-        claim_adjuster = ClaimAdjuster.objects.get(id=pk)
-        claim_adjuster.soft_delete()
-        messages.success(request, 'Claim Adjuster eliminado exitosamente')
-        return redirect('claim-adjuster')
+class DeleteClaimAdjuster(BaseDeleteView):
+    model = ClaimAdjuster
+    redirect_url = 'claim-adjuster'
+    template_name = 'show/show-claim-adjuster.html'
+    success_message = "Claim Adjuster eliminado exitosamente"
+
+    def get_context_function(self, request):
+        return claim_adjuster_context(request)
+
 
 @method_decorator(login_required, name='dispatch')
-class RestoreClaimAdjuster(View):
-    def post(self, request, pk):
-        claim_adjuster = ClaimAdjuster.objects.get(id=pk)
-        claim_adjuster.restore()
-        messages.success(request, 'Claim Adjuster restaurado exitosamente')
-        return redirect('claim-adjuster')
+class RestoreClaimAdjuster(BaseRestoreView):
+    model = ClaimAdjuster
+    redirect_url = 'claim-adjuster'
+    success_message = "Claim Adjuster restaurado exitosamente"
+
+
+# ============================================================
+# DEFENSE ATTORNEY
+# ============================================================
+
+def defense_attorney_context(request, form=DefenseAttorneyForm(), return_query=True):
+    search = request.GET.get('search', '')
     
-
-
-def DefenseAttorneyContext(request, form_class=DefenseAttorneyForm(), return_query=True):
-    search = request.GET.get('search')
-    if not search: 
-        search = ""
-
     context = {
         'name': 'Defense Attorney',
-        'form': form_class,
-        'list_url':'defense-attorney',
+        'form': form,
+        'list_url': 'defense-attorney',
         'search': search,
         'create_active': False,
         'update_active': False,
         'delete_active': False,
         'restore_active': False,
     }
-
-    if not return_query:
-        return context
     
-    queryset = DefenseAttorney.objects.filter(
-        Q(name__icontains=search) | 
-        Q(id__icontains=search)
-    )
-    context['items'] = queryset
-
+    if return_query:
+        queryset = DefenseAttorney.objects.filter(
+            Q(name__icontains=search) | Q(id__icontains=search)
+        )
+        if request.user.systemuser.role != "admin":
+            queryset = queryset.filter(active=True)
+        context['items'] = queryset
+    
+    
     return context
 
+
 @method_decorator(login_required, name='dispatch')
-class ListDefenseAttorney(ListView):
+class ListDefenseAttorney(BaseListView):
     model = DefenseAttorney
     template_name = 'show/show-defense-attorney.html'
-    context_object_name = 'items'
+    
+    def get_context_function(self, request):
+        return defense_attorney_context(request)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        search_value = self.request.GET.get('search', '')
-        
-        added_context = DefenseAttorneyContext(self.request)
-        return context | added_context
 
 @method_decorator(login_required, name='dispatch')
-class CreateDefenseAttorney(CreateView):
+class CreateDefenseAttorney(BaseCreateView):
     model = DefenseAttorney
     form_class = DefenseAttorneyForm
     success_url = reverse_lazy('defense-attorney')
     template_name = 'show/show-defense-attorney.html'
+    success_message = "Defense Attorney creado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = DefenseAttorneyContext(self.request, form)
-        context['create_active'] = True
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Defense Attorney creado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return defense_attorney_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class UpdateDefenseAttorney(UpdateView):
+class UpdateDefenseAttorney(BaseUpdateView):
     model = DefenseAttorney
     form_class = DefenseAttorneyForm
     success_url = reverse_lazy('defense-attorney')
     template_name = 'show/show-defense-attorney.html'
+    success_message = "Defense Attorney modificado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = DefenseAttorneyContext(self.request, form)
-        context['update_active'] = True
-        context['object_name'] = self.get_object().name
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Defense Attorney modificado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return defense_attorney_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class DeleteDefenseAttorney(View):
-    def post(self, request, pk):
-        defense_attorney = DefenseAttorney.objects.get(id=pk)
-        defense_attorney.soft_delete()
-        messages.success(request, 'Defense Attorney eliminado exitosamente')
-        return redirect('defense-attorney')
+class DeleteDefenseAttorney(BaseDeleteView):
+    model = DefenseAttorney
+    redirect_url = 'defense-attorney'
+    template_name = 'show/show-defense-attorney.html'
+    success_message = "Defense Attorney eliminado exitosamente"
+
+    def get_context_function(self, request):
+        return defense_attorney_context(request)
+
 
 @method_decorator(login_required, name='dispatch')
-class RestoreDefenseAttorney(View):
-    def post(self, request, pk):
-        defense_attorney = DefenseAttorney.objects.get(id=pk)
-        defense_attorney.restore()
-        messages.success(request, 'Defense Attorney restaurado exitosamente')
-        return redirect('defense-attorney')
+class RestoreDefenseAttorney(BaseRestoreView):
+    model = DefenseAttorney
+    redirect_url = 'defense-attorney'
+    success_message = "Defense Attorney restaurado exitosamente"
 
 
-def DefenseAssistantContext(request, form_class=DefenseAssistantForm(), return_query=True):
-    search = request.GET.get('search')
-    if not search: 
-        search = ""
+# ============================================================
+# DEFENSE ASSISTANT
+# ============================================================
 
+def defense_assistant_context(request, form=DefenseAssistantForm(), return_query=True):
+    search = request.GET.get('search', '')
+    
     context = {
         'name': 'Defense Assistant',
-        'form': form_class,
-        'list_url':'defense-assistant',
+        'form': form,
+        'list_url': 'defense-assistant',
         'search': search,
         'create_active': False,
         'update_active': False,
         'delete_active': False,
         'restore_active': False,
     }
-
-    if not return_query:
-        return context
     
-    queryset = DefenseAssistant.objects.filter(
-        Q(name__icontains=search) | 
-        Q(id__icontains=search)
-    )
-    context['items'] = queryset
-
+    if return_query:
+        queryset = DefenseAssistant.objects.filter(
+            Q(name__icontains=search) | Q(id__icontains=search)
+        )
+        if request.user.systemuser.role != "admin":
+            queryset = queryset.filter(active=True)
+        context['items'] = queryset
+    
+    
     return context
 
+
 @method_decorator(login_required, name='dispatch')
-class ListDefenseAssistant(ListView):
+class ListDefenseAssistant(BaseListView):
     model = DefenseAssistant
     template_name = 'show/show-defense-assistant.html'
-    context_object_name = 'items'
+    
+    def get_context_function(self, request):
+        return defense_assistant_context(request)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        search_value = self.request.GET.get('search', '')
-        
-        added_context = DefenseAssistantContext(self.request)
-        return context | added_context
 
 @method_decorator(login_required, name='dispatch')
-class CreateDefenseAssistant(CreateView):
+class CreateDefenseAssistant(BaseCreateView):
     model = DefenseAssistant
     form_class = DefenseAssistantForm
     success_url = reverse_lazy('defense-assistant')
     template_name = 'show/show-defense-assistant.html'
+    success_message = "Defense Assistant creado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = DefenseAssistantContext(self.request, form)
-        context['create_active'] = True
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Defense Assistant creado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return defense_assistant_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class UpdateDefenseAssistant(UpdateView):
+class UpdateDefenseAssistant(BaseUpdateView):
     model = DefenseAssistant
     form_class = DefenseAssistantForm
     success_url = reverse_lazy('defense-assistant')
     template_name = 'show/show-defense-assistant.html'
+    success_message = "Defense Assistant modificado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = DefenseAssistantContext(self.request, form)
-        context['update_active'] = True
-        context['object_name'] = self.get_object().name
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Defense Assistant modificado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return defense_assistant_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class DeleteDefenseAssistant(View):
-    def post(self, request, pk):
-        defense_assistant = DefenseAssistant.objects.get(id=pk)
-        defense_assistant.soft_delete()
-        messages.success(request, 'Defense Assistant eliminado exitosamente')
-        return redirect('defense-assistant')
+class DeleteDefenseAssistant(BaseDeleteView):
+    model = DefenseAssistant
+    redirect_url = 'defense-assistant'
+    template_name = 'show/show-defense-assistant.html'
+    success_message = "Defense Assistant eliminado exitosamente"
+
+    def get_context_function(self, request):
+        return defense_assistant_context(request)
+
 
 @method_decorator(login_required, name='dispatch')
-class RestoreDefenseAssistant(View):
-    def post(self, request, pk):
-        defense_assistant = DefenseAssistant.objects.get(id=pk)
-        defense_assistant.restore()
-        messages.success(request, 'Defense Assistant restaurado exitosamente')
-        return redirect('defense-assistant')
+class RestoreDefenseAssistant(BaseRestoreView):
+    model = DefenseAssistant
+    redirect_url = 'defense-assistant'
+    success_message = "Defense Assistant restaurado exitosamente"
+
+
+# ============================================================
+# INJURY TYPE
+# ============================================================
+
+def injury_type_context(request, form=InjuryTypeForm(), return_query=True):
+    search = request.GET.get('search', '')
     
-
-# InjuryType Context
-def InjuryTypeContext(request, form_class=InjuryTypeForm(), return_query=True):
-    search = request.GET.get('search')
-    if not search: 
-        search = ""
-
     context = {
         'name': 'Injury Type',
-        'form': form_class,
-        'list_url':'injury-type',
+        'form': form,
+        'list_url': 'injury-type',
         'search': search,
         'create_active': False,
         'update_active': False,
         'delete_active': False,
         'restore_active': False,
     }
-
-    if not return_query:
-        return context
-        
     
-    queryset = InjuryType.objects.filter(
-        Q(name__icontains=search) | 
-        Q(id__icontains=search)
-    )
-    context['items'] = queryset
-
+    if return_query:
+        queryset = InjuryType.objects.filter(
+            Q(name__icontains=search) | Q(id__icontains=search)
+        )
+        if request.user.systemuser.role != "admin":
+            queryset = queryset.filter(active=True)
+        context['items'] = queryset
+    
+    
     return context
 
+
 @method_decorator(login_required, name='dispatch')
-class ListInjuryType(ListView):
+class ListInjuryType(BaseListView):
     model = InjuryType
     template_name = 'show/show-injury-type.html'
-    context_object_name = 'items'
+    
+    def get_context_function(self, request):
+        return injury_type_context(request)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        search_value = self.request.GET.get('search', '')
-        
-        added_context = InjuryTypeContext(self.request)
-        return context | added_context
 
 @method_decorator(login_required, name='dispatch')
-class CreateInjuryType(CreateView):
+class CreateInjuryType(BaseCreateView):
     model = InjuryType
     form_class = InjuryTypeForm
     success_url = reverse_lazy('injury-type')
     template_name = 'show/show-injury-type.html'
+    success_message = "Injury Type creado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = InjuryTypeContext(self.request, form)
-        context['create_active'] = True
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Injury Type creado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return injury_type_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class UpdateInjuryType(UpdateView):
+class UpdateInjuryType(BaseUpdateView):
     model = InjuryType
     form_class = InjuryTypeForm
     success_url = reverse_lazy('injury-type')
     template_name = 'show/show-injury-type.html'
+    success_message = "Injury Type modificado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = InjuryTypeContext(self.request, form)
-        context['update_active'] = True
-        context['object_name'] = self.get_object().name
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Injury Type modificado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return injury_type_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class DeleteInjuryType(View):
-    def post(self, request, pk):
-        obj = InjuryType.objects.get(id=pk)
-        obj.soft_delete()
-        messages.success(request, 'Injury Type eliminado exitosamente')
-        return redirect('injury-type')
+class DeleteInjuryType(BaseDeleteView):
+    model = InjuryType
+    redirect_url = 'injury-type'
+    template_name = 'show/show-injury-type.html'
+    success_message = "Injury Type eliminado exitosamente"
+
+    def get_context_function(self, request):
+        return injury_type_context(request)
+
 
 @method_decorator(login_required, name='dispatch')
-class RestoreInjuryType(View):
-    def post(self, request, pk):
-        obj = InjuryType.objects.get(id=pk)
-        obj.restore()
-        messages.success(request, 'Injury Type restaurado exitosamente')
-        return redirect('injury-type')
+class RestoreInjuryType(BaseRestoreView):
+    model = InjuryType
+    redirect_url = 'injury-type'
+    success_message = "Injury Type restaurado exitosamente"
 
 
-# BodyPart Context
-def BodyPartContext(request, form_class=BodyPartForm(), return_query=True):
-    search = request.GET.get('search')
-    if not search: 
-        search = ""
+# ============================================================
+# BODY PART
+# ============================================================
 
+def body_part_context(request, form=BodyPartForm(), return_query=True):
+    search = request.GET.get('search', '')
+    
     context = {
         'name': 'Body Part',
-        'form': form_class,
-        'list_url':'body-part',
+        'form': form,
+        'list_url': 'body-part',
         'search': search,
         'create_active': False,
         'update_active': False,
         'delete_active': False,
         'restore_active': False,
     }
-
-    if not return_query:
-        return context
     
-    queryset = BodyPart.objects.filter(
-        Q(name__icontains=search) | 
-        Q(id__icontains=search)
-    )
-
-    if request.user.systemuser.role != "admin":
-        queryset = queryset.filter(active=True)
-
-    context['items'] = queryset
+    if return_query:
+        queryset = BodyPart.objects.filter(
+            Q(name__icontains=search) | Q(id__icontains=search)
+        )
+        
+        # Filtro especial para BodyPart
+        if request.user.systemuser.role != "admin":
+            queryset = queryset.filter(active=True)
+        
+        if request.user.systemuser.role != "admin":
+            queryset = queryset.filter(active=True)
+        context['items'] = queryset
 
     return context
 
+
 @method_decorator(login_required, name='dispatch')
-class ListBodyPart(ListView):
+class ListBodyPart(BaseListView):
     model = BodyPart
     template_name = 'show/show-body-part.html'
-    context_object_name = 'items'
+    
+    def get_context_function(self, request):
+        return body_part_context(request)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        search_value = self.request.GET.get('search', '')
-        
-        added_context = BodyPartContext(self.request)
-        return context | added_context
 
 @method_decorator(login_required, name='dispatch')
-class CreateBodyPart(CreateView):
+class CreateBodyPart(BaseCreateView):
     model = BodyPart
     form_class = BodyPartForm
     success_url = reverse_lazy('body-part')
     template_name = 'show/show-body-part.html'
+    success_message = "Body Part creado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = BodyPartContext(self.request, form)
-        context['create_active'] = True
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Body Part creado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return body_part_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class UpdateBodyPart(UpdateView):
+class UpdateBodyPart(BaseUpdateView):
     model = BodyPart
     form_class = BodyPartForm
     success_url = reverse_lazy('body-part')
     template_name = 'show/show-body-part.html'
+    success_message = "Body Part modificado exitosamente"
     
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = BodyPartContext(self.request, form)
-        context['update_active'] = True
-        context['object_name'] = self.get_object().name
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Body Part modificado exitosamente')
-        return super().form_valid(form)
+    def get_context_function(self, request, form):
+        return body_part_context(request, form)
+
 
 @method_decorator(login_required, name='dispatch')
-class DeleteBodyPart(View):
-    def post(self, request, pk):
-        obj = BodyPart.objects.get(id=pk)
-        obj.soft_delete()
-        messages.success(request, 'Body Part eliminado exitosamente')
-        return redirect('body-part')
+class DeleteBodyPart(BaseDeleteView):
+    model = BodyPart
+    redirect_url = 'body-part'
+    template_name = 'show/show-body-part.html'
+    success_message = "Body Part eliminado exitosamente"
+
+    def get_context_function(self, request):
+        return body_part_context(request)
+
 
 @method_decorator(login_required, name='dispatch')
-class RestoreBodyPart(View):
-    def post(self, request, pk):
-        obj = BodyPart.objects.get(id=pk)
-        obj.restore()
-        messages.success(request, 'Body Part restaurado exitosamente')
-        return redirect('body-part')
+class RestoreBodyPart(BaseRestoreView):
+    model = BodyPart
+    redirect_url = 'body-part'
+    success_message = "Body Part restaurado exitosamente"
 
-# Injury Context (especial)
-def InjuryContext(request, form_class=InjuryForm(), return_query=True):
-    search = request.GET.get('search')
-    if not search: 
-        search = ""
+# ============================================================
+# INJURY (especial - tiene relaciones)
+# ============================================================
 
+def injury_context(request, form=InjuryForm(), return_query=True):
+    search = request.GET.get('search', '')
+    
     context = {
         'name': 'Injury',
-        'form': form_class,
-        'list_url':'injury',
+        'form': form,
+        'list_url': 'injury',
         'search': search,
         'create_active': False,
         'update_active': False,
         'delete_active': False,
         'restore_active': False,
     }
-
-    if not return_query:
-        return context
     
-    # Búsqueda en campos relacionados
-    queryset = Injury.objects.filter(
-        Q(id__icontains=search) |
-        Q(date__icontains=search) |
-        Q(part__name__icontains=search) |
-        Q(type__name__icontains=search) |
-        Q(case__id__icontains=search)
-    )
-    context['items'] = queryset
-
+    if return_query:
+        queryset = Injury.objects.filter(
+            Q(id__icontains=search) |
+            Q(date__icontains=search) |
+            Q(part__name__icontains=search) |
+            Q(type__name__icontains=search) |
+            Q(case__id__icontains=search)
+        )
+        if request.user.systemuser.role != "admin":
+            queryset = queryset.filter(active=True)
+        context['items'] = queryset
+    
+    
     return context
 
 @method_decorator(login_required, name='dispatch')
-class ListInjury(ListView):
+class ListInjury(BaseListView):
     model = Injury
     template_name = 'show/show-injury.html'
-    context_object_name = 'items'
+    
+    def get_context_function(self, request):
+        context = injury_context(request)
+        context['body_parts'] = BodyPart.objects.filter(active=True)
+        context['injury_types'] = InjuryType.objects.filter(active=True)
+        return context
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        search_value = self.request.GET.get('search', '')
-        
-        added_context = InjuryContext(self.request)
-        
-        # Agregar opciones para selects en form
-        added_context['body_parts'] = BodyPart.objects.filter(active=True)
-        added_context['injury_types'] = InjuryType.objects.filter(active=True)
-        
-        return context | added_context
 
 @method_decorator(login_required, name='dispatch')
-class CreateInjury(CreateView):
+class CreateInjury(BaseCreateView):
     model = Injury
     form_class = InjuryForm
     success_url = reverse_lazy('injury')
     template_name = 'show/show-injury.html'
+    success_message = "Injury creado exitosamente"
     
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    def get_context_function(self, request, form):
+        context = injury_context(request, form)
         context['body_parts'] = BodyPart.objects.filter(active=True)
         context['injury_types'] = InjuryType.objects.filter(active=True)
         return context
-    
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = InjuryContext(self.request, form)
-        context['create_active'] = True
-        context['body_parts'] = BodyPart.objects.filter(active=True)
-        context['injury_types'] = InjuryType.objects.filter(active=True)
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Injury creado exitosamente')
-        return super().form_valid(form)
+
 
 @method_decorator(login_required, name='dispatch')
-class UpdateInjury(UpdateView):
+class UpdateInjury(BaseUpdateView):
     model = Injury
     form_class = InjuryForm
     success_url = reverse_lazy('injury')
     template_name = 'show/show-injury.html'
+    success_message = "Injury modificado exitosamente"
     
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    def get_context_function(self, request, form):
+        context = injury_context(request, form)
         context['body_parts'] = BodyPart.objects.filter(active=True)
         context['injury_types'] = InjuryType.objects.filter(active=True)
         return context
-    
-    def form_invalid(self, form):
-        search = self.request.GET.get('search', '')
-        context = InjuryContext(self.request, form)
-        context['update_active'] = True
-        context['object_name'] = self.get_object().name  # Usa el método name()
-        context['body_parts'] = BodyPart.objects.filter(active=True)
-        context['injury_types'] = InjuryType.objects.filter(active=True)
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        messages.success(self.request, 'Injury modificado exitosamente')
-        return super().form_valid(form)
+
 
 @method_decorator(login_required, name='dispatch')
-class DeleteInjury(View):
-    def post(self, request, pk):
-        obj = Injury.objects.get(id=pk)
-        obj.soft_delete()
-        messages.success(request, 'Injury eliminado exitosamente')
-        return redirect('injury')
+class DeleteInjury(BaseDeleteView):
+    model = Injury
+    redirect_url = 'injury'
+    template_name = 'show/show-injury.html'
+    success_message = "Injury eliminado exitosamente"
+
+    def get_context_function(self, request, form):
+        return injury_context(self, request)
+
 
 @method_decorator(login_required, name='dispatch')
-class RestoreInjury(View):
-    def post(self, request, pk):
-        obj = Injury.objects.get(id=pk)
-        obj.restore()
-        messages.success(request, 'Injury restaurado exitosamente')
-        return redirect('injury')
-    
+class RestoreInjury(BaseRestoreView):
+    model = Injury
+    redirect_url = 'injury'
+    success_message = "Injury restaurado exitosamente"
  
+
 from django.utils import timezone
 from datetime import datetime, timedelta 
 import pandas as pd
@@ -1886,7 +1942,7 @@ class Report(View):
         return render(request, 'report.html', context)
     
     def export_to_excel(self, cases, start_date, end_date):
-        """Exporta los casos a un archivo Excel"""
+        # Exporta los casos a un archivo Excel
         
         data = []
         for case in cases:
@@ -1968,3 +2024,80 @@ class Report(View):
             worksheet.freeze_panes = 'A3'
         
         return response
+    
+
+class CaseHistory(View):
+
+    def get(self, request, pk):  
+        case = get_object_or_404(Case, id=pk)
+        history = case.history.all().order_by('-history_date')
+        
+        # Obtener los verbose_name de los campos del modelo Case
+        field_verbose_names = {}
+        for field in Case._meta.get_fields():
+            if hasattr(field, 'verbose_name'):
+                field_verbose_names[field.name] = str(field.verbose_name)
+            else:
+                # Para campos que no tienen verbose_name, formatear el nombre
+                field_verbose_names[field.name] = field.name.replace('_', ' ').title()
+        
+        # Diccionario adicional para campos personalizados (si necesitas sobrescribir)
+        CUSTOM_NAMES = {
+            'adj_num': 'Adjudication Number',
+            'claim_num': 'Claim Number',
+            'date_assigned': 'Date Assigned',
+            'def_lawfirm': 'Defense Law Firm',
+            'def_attorney': 'Defense Attorney',
+            'def_assistant': 'Defense Assistant',
+            'claim_admin': 'Claim Administrator',
+            'claim_adjuster': 'Claim Adjuster',
+        }
+        
+        # Combinar verbose_name con nombres personalizados (los personalizados tienen prioridad)
+        for field_name, custom_name in CUSTOM_NAMES.items():
+            field_verbose_names[field_name] = custom_name
+        
+        history_data = []
+        history_list = list(history)
+        
+        for i, record in enumerate(history_list):
+            changes = []
+            
+            # Comparar con el registro anterior si existe
+            if i < len(history_list) - 1:
+                prev_record = history_list[i + 1]
+                diff = record.diff_against(prev_record)
+                
+                # Convertir los cambios a un formato usable en el template
+                for change in diff.changes:
+                    # ✅ Usar verbose_name en lugar del nombre del campo
+                    field_display_name = field_verbose_names.get(change.field, change.field.replace('_', ' ').title())
+                    
+                    changes.append({
+                        'field': field_display_name,
+                        'field_name': change.field,  # Guardar también el nombre original por si acaso
+                        'old': str(change.old) if change.old else '(none)',
+                        'new': str(change.new) if change.new else '(none)',
+                    })
+            
+            # Determinar el tipo de registro
+            is_initial = (i == len(history_list) - 1)  # El último registro es el inicial
+            has_changes = len(changes) > 0
+            
+            history_data.append({
+                'date': record.history_date,
+                'user': record.history_user.username if record.history_user else 'System',
+                'changes': changes,
+                'is_initial': is_initial,
+                'has_changes': has_changes,
+                'record_type': 'initial' if is_initial else ('update' if has_changes else 'empty_save'),
+            })
+        
+        context = {
+            'case': case,
+            'history_data': history_data,
+            'total_changes': len(history_data),
+        }
+        
+        return render(request, 'case-history.html', context)
+

@@ -1,0 +1,22 @@
+{% if form.choice %}
+    <div class="form-field">
+        {{form.choice.label_tag}}
+        {{form.choice}}
+        {{form.choice.errors}}
+        {{form.name}}
+    </div>
+{% else %}
+    <div class="form-field">
+        {{form.name.label_tag}}
+        {{form.name}}
+        {{form.name.errors}}
+    </div>
+{% endif %} 
+
+{% if form.address %}
+<div class="form-field">
+    {{form.address.label_tag}}
+    {{form.address}}
+    {{form.address.errors}}
+</div>
+{% endif %}

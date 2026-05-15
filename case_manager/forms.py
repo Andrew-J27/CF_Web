@@ -54,6 +54,10 @@ class ClientForm(forms.ModelForm):
             'birth': forms.DateInput(attrs={'class': 'form-field', 'type': 'date'}),
         }
 
+        labels = {
+            'ssn':'Security social Num.',
+        }
+
 class ClientContactForm(forms.ModelForm):
     class Meta:
         model = ClientContact
@@ -340,7 +344,6 @@ class SystemAttorneyForm(forms.ModelForm):
             attorney.save()
         
         return attorney
-    
 
 class SystemAssistantForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput, required=True)
@@ -398,10 +401,7 @@ class SystemAssistantForm(forms.ModelForm):
         
         return assistant
     
-
-
 # forms.py
-
 class SystemAttorneyUpdateForm(forms.ModelForm):
     # Contraseña opcional
     password = forms.CharField(
@@ -484,7 +484,6 @@ class SystemAttorneyUpdateForm(forms.ModelForm):
         
         return attorney
     
-
 class SystemAssistantUpdateForm(forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput, 
@@ -555,3 +554,239 @@ class SystemAssistantUpdateForm(forms.ModelForm):
             assistant.save()
         
         return assistant
+    
+
+    
+# Base class para todos los ChoiceForms
+# Base class para todos los ChoiceForms
+class BaseChoiceForm(forms.ModelForm):
+    choice_field_name = 'choice'  # ← Fijo para todos
+    model_class = None
+    optional = False
+    has_address = False
+    widget_id = None
+    widget_class = None
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # ✅ CREAR EL CAMPO 'choice' AUTOMÁTICAMENTE si no existe
+        if self.choice_field_name not in self.fields:
+            self.fields[self.choice_field_name] = forms.ChoiceField(
+                required=not self.optional,
+                choices=[],
+                widget=forms.Select(attrs={
+                    'id': self.widget_id or f'tom-select-{self.model_class._meta.model_name}',
+                    'class': self.widget_class or self.widget_id or f'tom-select-{self.model_class._meta.model_name}',
+                    'placeholder': f'Search or create {self.model_class._meta.verbose_name}...'
+                })
+            )
+        
+        # Configurar el widget con ID y clase
+        widget_attrs = {}
+        if self.widget_id:
+            widget_attrs['id'] = self.widget_id
+        if self.widget_class:
+            widget_attrs['class'] = self.widget_class
+        elif self.widget_id:
+            widget_attrs['class'] = self.widget_id
+        
+        if widget_attrs:
+            self.fields[self.choice_field_name].widget = forms.Select(attrs=widget_attrs)
+        
+        # Cargar queryset y opciones
+        queryset = self.model_class.objects.filter(active=True).order_by('name')
+        
+        if self.optional:
+            choices = [('', 'None - Optional')]
+        else:
+            choices = [('', f'Select or create {self.model_class._meta.verbose_name}...')]
+        
+        choices.extend([(obj.id, obj.name) for obj in queryset])
+        self.fields[self.choice_field_name].choices = choices
+        
+        # Configurar campos del modelo
+        self.fields['name'].required = False
+        self.fields['name'].widget = forms.HiddenInput()  # ← Ocultar name automáticamente
+        
+        if self.has_address and 'address' in self.fields:
+            self.fields['address'].required = False
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        choice_value = cleaned_data.get(self.choice_field_name, '')
+        
+        if not choice_value and not self.optional:
+            raise forms.ValidationError(f"{self.model_class._meta.verbose_name} is required")
+        
+        if choice_value:
+            try:
+                obj_id = int(choice_value)
+                existing_obj = self.model_class.objects.get(id=obj_id, active=True)
+                cleaned_data['_existing_object'] = existing_obj
+            except (ValueError, self.model_class.DoesNotExist):
+                cleaned_data['_new_object_name'] = choice_value
+        
+        return cleaned_data
+     
+    def save(self, commit=True):
+        if '_existing_object' in self.cleaned_data:
+            return self.cleaned_data['_existing_object']
+        
+        if '_new_object_name' in self.cleaned_data:
+            obj = self.model_class(
+                name=self.cleaned_data['_new_object_name'],
+                active=True
+            )
+            
+            if self.has_address and 'address' in self.fields:
+                obj.address = self.cleaned_data.get('address', '')
+            
+            if hasattr(obj, 'ssn') and 'ssn' in self.fields:
+                obj.ssn = self.cleaned_data.get('ssn', '')
+            if hasattr(obj, 'birth') and 'birth' in self.fields:
+                obj.birth = self.cleaned_data.get('birth')
+            
+            if commit:
+                obj.save()
+            
+            return obj
+        
+        return None
+     
+    def validate_unique_name(self, name):
+        if self.model_class.objects.filter(name=name, active=True).exists():
+            raise forms.ValidationError(
+                f"A {self.model_class._meta.verbose_name} with name '{name}' already exists. "
+                f"Please select it from the list."
+            )
+        return name
+
+class ClientChoiceForm(BaseChoiceForm):
+    choice = forms.ChoiceField(  # ← Cambiar a 'choice' para consistencia
+        required=True,
+        choices=[],  # Se llenarán dinámicamente
+        widget=forms.Select(attrs={
+            'class': 'tom-select-client',
+            'placeholder': 'Search existing client or type new name...',
+            'id': 'tom-select-client'
+        })
+    )
+    
+    choice_field_name = 'choice'  # ← Añadir esto
+    model_class = Client
+    optional = False
+    has_address = True
+    widget_id = 'tom-select-client'
+    
+    class Meta:
+        model = Client
+        fields = ['name', 'address', 'ssn', 'birth']
+        widgets = {
+            'name': forms.HiddenInput(),
+            'ssn': forms.TextInput(attrs={'class': 'client-field'}),
+            'address': forms.TextInput(attrs={'class': 'client-field'}),
+            'birth': forms.DateInput(attrs={'class': 'client-field', 'type': 'date'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Configuración adicional específica de Client
+        self.fields['ssn'].required = False
+        self.fields['birth'].required = False
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # Validación específica para clientes
+        if '_new_client_name' in cleaned_data:
+            new_name = cleaned_data['_new_client_name']
+            if Client.objects.filter(name=new_name, active=True).exists():
+                raise forms.ValidationError(f"A client with name '{new_name}' already exists. Please select it from the list.")
+        
+        return cleaned_data
+
+class EmployerChoiceForm(BaseChoiceForm):
+    choice = forms.ChoiceField(required=True, choices=[])  # ← nombre estandarizado
+    choice_field_name = 'choice'  # ← nombre estandarizado
+    model_class = Employer
+    optional = False
+    has_address = True
+    widget_id = 'tom-select-employer'
+    
+    class Meta:
+        model = Employer
+        fields = ['name', 'address']
+        widgets = {'name': forms.HiddenInput(), 'address': forms.TextInput()}
+
+class InsuranceCarrierChoiceForm(BaseChoiceForm):
+    insurance_carrier_choice = forms.ChoiceField(required=False, choices=[])
+    choice_field_name = 'choice'
+    model_class = InsuranceCarrier
+    optional = False
+    has_address = True
+    widget_id = 'tom-select-insurance-carrier'
+    
+    class Meta:
+        model = InsuranceCarrier
+        fields = ['name', 'address']
+        widgets = {'name': forms.HiddenInput(), 'address': forms.TextInput()}
+
+class ClaimAdministratorChoiceForm(BaseChoiceForm):
+    claim_administrator_choice = forms.ChoiceField(required=False, choices=[]) 
+    model_class = ClaimAdministrator
+    optional = True
+    has_address = True
+    widget_id = 'tom-select-claim-administrator'
+    
+    class Meta:
+        model = ClaimAdministrator
+        fields = ['name', 'address']
+        widgets = {'name': forms.HiddenInput(), 'address': forms.TextInput()}
+
+class ClaimAdjusterChoiceForm(BaseChoiceForm):
+    claim_adjuster_choice = forms.ChoiceField(required=False, choices=[]) 
+    model_class = ClaimAdjuster
+    optional = True
+    has_address = False
+    widget_id = 'tom-select-claim-adjuster'
+    
+    class Meta:
+        model = ClaimAdjuster
+        fields = ['name']
+        widgets = {'name': forms.HiddenInput()}
+
+
+class DefenseLawFirmChoiceForm(BaseChoiceForm):
+    defense_law_firm_choice = forms.ChoiceField(required=False, choices=[]) 
+    model_class = DefenseLawFirm
+    optional = True
+    has_address = True
+    
+    class Meta:
+        model = DefenseLawFirm
+        fields = ['name', 'address']
+        widgets = {'name': forms.HiddenInput(), 'address': forms.TextInput()}
+
+
+class DefenseAttorneyChoiceForm(BaseChoiceForm):
+    defense_attorney_choice = forms.ChoiceField(required=False, choices=[]) 
+    model_class = DefenseAttorney
+    optional = True
+    has_address = False
+    
+    class Meta:
+        model = DefenseAttorney
+        fields = ['name']
+        widgets = {'name': forms.HiddenInput()}
+
+class DefenseAssistantChoiceForm(BaseChoiceForm):
+    defense_assistant_choice = forms.ChoiceField(required=False, choices=[]) 
+    model_class = DefenseAssistant
+    optional = True
+    has_address = False
+    
+    class Meta:
+        model = DefenseAssistant
+        fields = ['name']
+        widgets = {'name': forms.HiddenInput()}

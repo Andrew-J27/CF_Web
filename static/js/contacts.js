@@ -210,17 +210,14 @@ const claimAdjusterContactsFormset = new DynamicFormset({
     addButton: claimPane.querySelector('.btn-add-contact')
 });
 
-let defPane = document.querySelector('#defense-pane');
-console.log(defPane);
+let defPane = document.querySelector('#defense-pane'); 
 
 const defAttorneyContactsFormset = new DynamicFormset({
     container: defPane.querySelector('.contacts-container'),
     prefix: 'def_attorney_contacts',
     addButton: defPane.querySelector('.btn-add-contact')
 });
-
-console.log(defAttorneyContactsFormset);
-
+ 
 const defAssistantContactsFormset = new DynamicFormset({
     container: defPane.querySelectorAll('.contacts-container')[1],
     prefix: 'def_assistant_contacts',

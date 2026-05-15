@@ -7,6 +7,13 @@
 <script src="{% static "js/tabs.js" %}" defer></script>
 <script src="{% static "js/contacts.js" %}" defer></script>
 <script src="{% static "js/injury.js" %}" defer></script>
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    
+<!-- Tom Select JS -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
+<script src="{% static "js/create-case.js" %}" defer></script>
+
 {% endblock link %}
 
 {% block main %}
@@ -25,23 +32,30 @@
         <div class="tab-pane active" data-tab="1" id="client-pane">
             <h2>Client Information</h2> 
             
-            <!-- Tom select aqui -->
-            <div class="form-field">  
-                {{client_form.name.label_tag}}
-                {{client_form.name}}
-                {{client_form.name.errors}}
-            </div>
-
-            <div class="form-field">
-                {{client_form.address.label_tag}}
-                {{client_form.address}}
-                {{client_form.address.errors}}
-            </div>
-
+            {% if client_form.choice %}
+                <div class="form-field">
+                    {{client_form.choice.label_tag}}
+                    {{client_form.choice}}
+                    {{client_form.choice.errors}}
+                    {{client_form.name}}
+                </div>
+            {% else %}
+                <div class="form-field">
+                    {{client_form.name.label_tag}}
+                    {{client_form.name}}
+                    {{client_form.name.errors}}
+                </div>
+            {% endif %}
             <div class="form-field">
                 {{client_form.ssn.label_tag}}
                 {{client_form.ssn}}
                 {{client_form.ssn.errors}}
+            </div>
+                
+            <div class="form-field">
+                {{client_form.address.label_tag}}
+                {{client_form.address}}
+                {{client_form.address.errors}}
             </div>
 
             <div class="form-field">
@@ -61,29 +75,7 @@
                 {{client_contact_formset.management_form}}
 
                 {% for form in client_contact_formset.forms %}
-                <div class="contact-item  ">
-                    {{ form.id }}
-
-                    {{ form.type.label_tag }}
-                    {{ form.type }}
-                    {% if form.type.errors %} {{ form.type.errors }} {% else %} <span></span> {% endif %}
-                    
-                    {{ form.value.label_tag }}
-                    {{ form.value }}
-                    {% if form.value.errors %} {{ form.value.errors }} {% else %} <span></span> {% endif %}
-
-                    {{ form.notes.label_tag }}
-                    {{ form.notes }}
-
-                    {% if forms.notes.errors %} {{forms.notes.errors}} {% else %} <span></span> {% endif %}
-                    {{ form.notes.errors }}
-                    
-                    <span></span>
-                    <button class="btn-delete-self" type="button">
-                        <i class="fi fi-sr-trash"></i>
-                    </button>
-                    {{form.active}}
-                </div>
+                    {% include "partials/contact-item-form.html" %}
                 {% endfor %} 
             </div>
             
@@ -126,7 +118,7 @@
             </div>
             <span></span>
 
-            <h2> Employers handling: </h2>
+            <h2> Staff handling: </h2>
             <div class="form-field">
                 {{ case_form.attorney.label_tag }}
                 {{ case_form.attorney }}
@@ -177,52 +169,22 @@
         </div>
         <div class="tab-pane" data-tab="4" id="employer-pane">
             <h2> Client's Employer Information</h2>
-            <div class="form-field">
-                {{ employer_form.name.label_tag }}
-                {{ employer_form.name }}
-                {{ employer_form.name.errors }}
-            </div>
-           <div class="form-field">
-                {{ employer_form.address.label_tag }}
-                {{ employer_form.address }}
-                {{ employer_form.address.errors }}
-            </div>
+            
+            {% include "partials/select-form.html" with form=employer_form %}
+
         </div>
         <div class="tab-pane" data-tab="5" id="insurance-pane">
-
             <h2> Employer's Insurance Carrier Information </h2>
-            <div class="form-field">
-                {{ insurance_form.name.label_tag }}
-                {{ insurance_form.name }}
-                {{ insurance_form.name.errors }}
-            </div>
-           <div class="form-field">
-                {{ insurance_form.address.label_tag }}
-                {{ insurance_form.address }}
-                {{ insurance_form.address.errors }}
-            </div>
+            {% include "partials/select-form.html" with form=insurance_form %}
         </div>
         <div class="tab-pane" data-tab="6" id="claim-pane">
 
             <h2> Claim Administrator Information </h2>
-            <div class="form-field">
-                {{ claim_admin_form.name.label_tag }}
-                {{ claim_admin_form.name }}
-                {{ claim_admin_form.name.errors }}
-            </div>
-           <div class="form-field">
-                {{ claim_admin_form.address.label_tag }}
-                {{ claim_admin_form.address }}
-                {{ claim_admin_form.address.errors }}
-            </div>
+            {% include "partials/select-form.html" with form=claim_admin_form %}
 
             <h2> Claim Adjuster Information </h2>
 
-            <div class="form-field">
-                {{ claim_adjuster_form.name.label_tag }}
-                {{ claim_adjuster_form.name }}
-                {{ claim_adjuster_form.name.errors }}
-            </div>
+            {% include "partials/select-form.html" with form=claim_adjuster_form %}
 
             <h2>
                 Claim Adjuster contact methods
@@ -235,29 +197,7 @@
                 {{claim_adjuster_contact_formset.management_form}}
 
                 {% for form in claim_adjuster_contact_formset.forms %} 
-                <div class="contact-item  ">
-                    {{ form.id }}
-
-                    {{ form.type.label_tag }}
-                    {{ form.type }}
-                    {% if form.type.errors %} {{ form.type.errors }} {% else %} <span></span> {% endif %}
-                    
-                    {{ form.value.label_tag }}
-                    {{ form.value }}
-                    {% if form.value.errors %} {{ form.value.errors }} {% else %} <span></span> {% endif %}
-
-                    {{ form.notes.label_tag }}
-                    {{ form.notes }}
-
-                    {% if forms.notes.errors %} {{forms.notes.errors}} {% else %} <span></span> {% endif %}
-                    {{ form.notes.errors }}
-                    
-                    <span></span>
-                    <button class="btn-delete-self" type="button">
-                        <i class="fi fi-sr-trash"></i>
-                    </button>
-                    {{form.active}}
-                </div>
+                    {% include "partials/contact-item-form.html" %}
                 {% endfor %} 
             </div>
         </div>
@@ -265,25 +205,11 @@
 
         <div class="tab-pane" data-tab="7" id="defense-pane">
             <h2> Defense Law firm Information</h2>
-            <div class="form-field">
-                {{ def_lawfirm_form.name.label_tag }}
-                {{ def_lawfirm_form.name }}
-                {{ def_lawfirm_form.name.errors }}
-            </div>
-            
-            <div class="form-field">
-                {{ def_lawfirm_form.address.label_tag }}
-                {{ def_lawfirm_form.address }}
-                {{ def_lawfirm_form.address.errors }}
-            </div>
+            {% include "partials/select-form.html" with form=def_lawfirm_form %}
             
             <h2> Def. Attorney Information </h2>
 
-            <div class="form-field">
-                {{ def_attorney_form.name.label_tag }}
-                {{ def_attorney_form.name }}
-                {{ def_attorney_form.name.errors }}
-            </div>
+            {% include "partials/select-form.html" with form=def_attorney_form %}
 
             <h2>
                 Def. Attorney contact methods
@@ -323,11 +249,7 @@
             </div> 
 
             <h2> Def. Assistant Information </h2>
-            <div class="form-field"> 
-                {{ def_assistant_form.name.label_tag }}
-                {{ def_assistant_form.name }}
-                {{ def_assistant_form.name.errors }}
-            </div>
+            {% include "partials/select-form.html" with form=def_assistant_form %}
 
             <h2>
                 Def. Assistant contact methods

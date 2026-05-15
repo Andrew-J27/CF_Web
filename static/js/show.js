@@ -10,10 +10,13 @@ function fillUpdateForm(btn, form) {
     cells.forEach(cell => { 
         const field = cell.dataset.field;
         const input = form.querySelector(`[name="${field}"]`); 
-
+        console.log(cell);
         if (input) {
-            if (input && input.type === 'date') cell.textContent = cell.textContent.trim();
-            else input.value = cell.textContent;   
+            if (input && input.type === 'date') {
+                
+                input.value = cell.dataset.date; 
+            } 
+            else input.value = cell.textContent;  
         }
     }); 
 }
@@ -110,3 +113,14 @@ document.addEventListener('DOMContentLoaded', function() {
         row.style.cursor = 'pointer';
     });
 });
+
+const search_form = document.querySelector('form.search');
+console.log(search_form);
+const filters = search_form.querySelectorAll('select');
+
+filters.forEach(filter => {
+    filter.addEventListener('change', function() {
+        search_form.submit();
+    });
+});
+

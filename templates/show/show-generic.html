@@ -16,6 +16,10 @@
     <form class="search" method="GET" action="{% url list_url %}">
         <h2 class="model-name">{{name}}</h2> 
         <span class="spacer"></span>
+
+        <!-- Used in list cases -->
+        {% block filter %}      
+        {% endblock filter %}
         
         {% if search %}
         <button class="btn-clear" type="button">
@@ -23,11 +27,7 @@
         </button>
         {% endif %}
         
-        <input type="text" class="search" name="search" value="{{search}}" placeholder="Search {{name}}" columns="20">
-        
-        <!-- Used in list cases -->
-        {% block filter %}      
-        {% endblock filter %}
+        <input type="text" class="search" name="search" value="{{search}}" placeholder="Search {{name}}" columns="20"> 
 
         <button>
             <i class="fi fi-br-search"></i> 
@@ -125,6 +125,8 @@
         {% block update_form %}
         {% endblock update_form %}
 
+        
+
         <div class="dialog__buttons">
             <a class="btn-close-modal" type="button"
                 {% if update_active %}href="{% url list_url %}"{% endif %}> 
@@ -142,8 +144,12 @@
 
         {% csrf_token %}
         <h2>Delete "<span class="title-name"></span>"</h2>
-        <p>This action can only be reversed by an admin. Are you sure you want to delete?</p>
-
+        <p>This action can only be reversed by an admin. Are you sure you want to delete?
+        </p>
+        
+        <p class="errorlist" styles="color: red;">
+            {{error_msg}}
+        </p>
         <div class="dialog__buttons">
             <a class="btn-close-modal" type="button"
                 {% if delete_active %}href="{% url list_url %}"{% endif %}>  
@@ -172,6 +178,7 @@
                 <i class="fi fi-br-check"></i> Confirm restore
             </button>
         </div>
+        
     </form>
 
     <div method='POST' action="" class="modal dialog error-form modal-error

@@ -7,47 +7,66 @@
 <script src="{% static "js/tabs.js" %}" defer></script>
 <script src="{% static "js/contacts.js" %}" defer></script>
 <script src="{% static "js/injury.js" %}" defer></script>
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    
+<!-- Tom Select JS -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
+<script src="{% static "js/create-case.js" %}" defer></script>
+
 {% endblock link %}
 
 {% block main %}
-<div class="tabs" data-initial="1" data-max="5"> 
+<div class="tabs" data-initial="{% if initial %}{{initial}}{% else %}1{% endif %}" data-max="7" data-create="{{create_form}}"> 
     <div class="tab-buttons">
         <button class="tab-btn active" data-tab="1">Client</button>
         <button class="tab-btn" data-tab="2">Case</button>
         <button class="tab-btn" data-tab="3">Injuries</button>
         <button class="tab-btn" data-tab="4">Employer</button>
-        <button class="tab-btn" data-tab="5">Insurance</button> 
+        <button class="tab-btn" data-tab="5">Insurance</button>
+        <button class="tab-btn" data-tab="6">Claim Admin</button>
+        <button class="tab-btn" data-tab="7">Defense Side</button>
     </div>
     <form method='POST' class="tab-content form">
         {% csrf_token %} 
         <div class="tab-pane active" data-tab="1" id="client-pane">
             <h2>Client Information</h2> 
             
+            
             <!-- Tom select aqui -->
+             {% if create_form %}
+            <div class="form-field">  
+                {{client_form.client_choice.label_tag}}
+                {{client_form.client_choice}}
+                {{client_form.client_choice.errors}}
+                {{client_form.name}}
+            </div>
+            {% else %}
             <div class="form-field">  
                 {{client_form.name.label_tag}}
                 {{client_form.name}}
                 {{client_form.name.errors}}
             </div>
-
-            <div class="form-field">
-                {{client_form.address.label_tag}}
-                {{client_form.address}}
-                {{client_form.address.errors}}
-            </div>
-
-            <div class="form-field">
-                {{client_form.ssn.label_tag}}
-                {{client_form.ssn}}
-                {{client_form.ssn.errors}}
-            </div>
-
+            {% endif %}
             <div class="form-field">
                 {{client_form.birth.label_tag}}
                 {{client_form.birth}}
                 {{client_form.birth.errors}}
             </div>
-
+            
+            <div class="form-field">
+                {{client_form.address.label_tag}}
+                {{client_form.address}}
+                {{client_form.address.errors}}
+            </div>
+            
+            <div class="form-field">
+                {{client_form.ssn.label_tag}}
+                {{client_form.ssn}}
+                {{client_form.ssn.errors}}
+            </div>
+             
+            
             <h2>
                 Client contact methods
                 <button class="btn-add-contact" type="button">
@@ -72,9 +91,7 @@
 
                     {{ form.notes.label_tag }}
                     {{ form.notes }}
-
-                    {% if forms.notes.errors %} {{forms.notes.errors}} {% else %} <span></span> {% endif %}
-                    {{ form.notes.errors }}
+                    {% if forms.notes.errors %} {{forms.notes.errors}} {% else %} <span></span> {% endif %} 
                     
                     <span></span>
                     <button class="btn-delete-self" type="button">
@@ -176,9 +193,9 @@
         <div class="tab-pane" data-tab="4" id="employer-pane">
             <h2> Client's Employer Information</h2>
             <div class="form-field">
-                {{ employer_form.name.label_tag }}
-                {{ employer_form.name }}
-                {{ employer_form.name.errors }}
+                {{ employer_form.employer_choice.label_tag }}
+                {{ employer_form.employer_choice }}
+                {{ employer_form.employer_choice.errors }}
             </div>
            <div class="form-field">
                 {{ employer_form.address.label_tag }}
@@ -190,15 +207,178 @@
 
             <h2> Employer's Insurance Carrier Information </h2>
             <div class="form-field">
-                {{ insurance_form.name.label_tag }}
-                {{ insurance_form.name }}
-                {{ insurance_form.name.errors }}
+                {{ insurance_form.insurance_carrier_choice.label_tag }}
+                {{ insurance_form.insurance_carrier_choice }}
+                {{ insurance_form.insurance_carrier_choice.errors }}
             </div>
            <div class="form-field">
                 {{ insurance_form.address.label_tag }}
                 {{ insurance_form.address }}
                 {{ insurance_form.address.errors }}
             </div>
+        </div>
+        <div class="tab-pane" data-tab="6" id="claim-pane">
+
+            <h2> Claim Administrator Information </h2>
+            <div class="form-field">
+                {{ claim_admin_form.claim_administrator_choice.label_tag }}
+                {{ claim_admin_form.claim_administrator_choice }}
+                {{ claim_admin_form.claim_administrator_choice.errors }}
+            </div>
+           <div class="form-field">
+                {{ claim_admin_form.address.label_tag }}
+                {{ claim_admin_form.address }}
+                {{ claim_admin_form.address.errors }}
+            </div>
+
+            <h2> Claim Adjuster Information </h2>
+
+            <div class="form-field">
+                {{ claim_adjuster_form.claim_adjuster_choice.label_tag }}
+                {{ claim_adjuster_form.claim_adjuster_choice }}
+                {{ claim_adjuster_form.claim_adjuster_choice.errors }}
+            </div>
+
+            <h2>
+                Claim Adjuster contact methods
+                <button class="btn-add-contact" type="button">
+                    <i class="fi fi-sr-plus"></i> Add contact
+                </button>
+            </h2>
+
+            <div class="contacts-container" id="claim-adjuster-contacts-container">
+                {{claim_adjuster_contact_formset.management_form}}
+
+                {% for form in claim_adjuster_contact_formset.forms %} 
+                <div class="contact-item  ">
+                    {{ form.id }}
+
+                    {{ form.type.label_tag }}
+                    {{ form.type }}
+                    {% if form.type.errors %} {{ form.type.errors }} {% else %} <span></span> {% endif %}
+                    
+                    {{ form.value.label_tag }}
+                    {{ form.value }}
+                    {% if form.value.errors %} {{ form.value.errors }} {% else %} <span></span> {% endif %}
+
+                    {{ form.notes.label_tag }}
+                    {{ form.notes }}
+
+                    {% if forms.notes.errors %} {{forms.notes.errors}} {% else %} <span></span> {% endif %}
+                    {{ form.notes.errors }}
+                    
+                    <span></span>
+                    <button class="btn-delete-self" type="button">
+                        <i class="fi fi-sr-trash"></i>
+                    </button>
+                    {{form.active}}
+                </div>
+                {% endfor %} 
+            </div>
+        </div>
+
+
+        <div class="tab-pane" data-tab="7" id="defense-pane">
+            <h2> Defense Law firm Information</h2>
+            <div class="form-field">
+                {{ def_lawfirm_form.defense_law_firm_choice.label_tag }}
+                {{ def_lawfirm_form.defense_law_firm_choice }}
+                {{ def_lawfirm_form.defense_law_firm_choice.errors }}
+            </div>
+            
+            <div class="form-field">
+                {{ def_lawfirm_form.address.label_tag }}
+                {{ def_lawfirm_form.address }}
+                {{ def_lawfirm_form.address.errors }}
+            </div>
+            
+            <h2> Def. Attorney Information </h2>
+
+            <div class="form-field">
+                {{ def_attorney_form.defense_attorney_choice.label_tag }}
+                {{ def_attorney_form.defense_attorney_choice }}
+                {{ def_attorney_form.defense_attorney_choice.errors }}
+            </div>
+
+            <h2>
+                Def. Attorney contact methods
+                <button class="btn-add-contact" type="button">
+                    <i class="fi fi-sr-plus"></i> Add contact
+                </button>
+            </h2>
+
+            <div class="contacts-container" id="def-attorney-contacts-container">
+                {{def_attorney_contact_formset.management_form}}
+
+                {% for form in def_attorney_contact_formset.forms %} 
+                <div class="contact-item  ">
+                    {{ form.id }}
+
+                    {{ form.type.label_tag }}
+                    {{ form.type }}
+                    {% if form.type.errors %} {{ form.type.errors }} {% else %} <span></span> {% endif %}
+                    
+                    {{ form.value.label_tag }}
+                    {{ form.value }}
+                    {% if form.value.errors %} {{ form.value.errors }} {% else %} <span></span> {% endif %}
+
+                    {{ form.notes.label_tag }}
+                    {{ form.notes }}
+
+                    {% if forms.notes.errors %} {{forms.notes.errors}} {% else %} <span></span> {% endif %}
+                    {{ form.notes.errors }}
+                    
+                    <span></span>
+                    <button class="btn-delete-self" type="button">
+                        <i class="fi fi-sr-trash"></i>
+                    </button>
+                    {{form.active}}
+                </div>
+                {% endfor %} 
+            </div> 
+
+            <h2> Def. Assistant Information </h2>
+            <div class="form-field"> 
+                {{ def_assistant_form.defense_assistant_choice.label_tag }}
+                {{ def_assistant_form.defense_assistant_choice }}
+                {{ def_assistant_form.defense_assistant_choice.errors }}
+            </div>
+
+            <h2>
+                Def. Assistant contact methods
+                <button class="btn-add-contact" type="button">
+                    <i class="fi fi-sr-plus"></i> Add contact
+                </button>
+            </h2>
+            <div class="contacts-container" id="def-assistant-contacts-container">
+                {{def_assistant_contact_formset.management_form}}
+
+                {% for form in def_assistant_contact_formset.forms %} 
+                <div class="contact-item  ">
+                    {{ form.id }}
+
+                    {{ form.type.label_tag }}
+                    {{ form.type }}
+                    {% if form.type.errors %} {{ form.type.errors }} {% else %} <span></span> {% endif %}
+                    
+                    {{ form.value.label_tag }}
+                    {{ form.value }}
+                    {% if form.value.errors %} {{ form.value.errors }} {% else %} <span></span> {% endif %}
+
+                    {{ form.notes.label_tag }}
+                    {{ form.notes }}
+
+                    {% if forms.notes.errors %} {{forms.notes.errors}} {% else %} <span></span> {% endif %}
+                    {{ form.notes.errors }}
+                    
+                    <span></span>
+                    <button class="btn-delete-self" type="button">
+                        <i class="fi fi-sr-trash"></i>
+                    </button>
+                    {{form.active}}
+                </div>
+                {% endfor %} 
+            </div> 
         </div> 
     </form>
     <div class="tab-controls">
@@ -208,8 +388,7 @@
         <span class="spacer"></span>
         <button class="btn-submit">
             <i class="fi fi-sr-disk"></i> Save
-        </button>
-        <span class="spacer"></span>
+        </button> 
         <button class="btn-next active"> 
             Next <i class="fi fi-sr-caret-right"></i>
         </button>

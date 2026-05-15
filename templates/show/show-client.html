@@ -14,7 +14,7 @@
 <td data-field="name">{{item.name}}</td>
 <td data-field="address">{{item.address|default:"-"}}</td>
 <td data-field="ssn">{{item.ssn|default:"-"}}</td>
-<td data-field="birth">{{item.birth|default:"-" }}</td>
+<td data-field="birth" data-date="{{item.birth|date:"Y-m-d"}}">{{item.birth|default:"-" }}</td>
 {% endblock attributes %}
 
 {% block create_form %}

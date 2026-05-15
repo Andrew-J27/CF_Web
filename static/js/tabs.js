@@ -15,10 +15,7 @@ if (tabs.dataset.create === "1") {
 }
 
 let currentTabId = "1";
-let maxTab = tabs.dataset.max;
-console.log(maxTab);
-
-
+let maxTab = tabs.dataset.max; 
 
 function isLastTabActive() {
     if (currentTabId === maxTab) 

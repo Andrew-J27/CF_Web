@@ -67,55 +67,55 @@ class Assistant(BaseModel):
 
 class Client(BaseModel):
     name = m.CharField(max_length=50, blank=False)
-    address = m.CharField(max_length=100, null=True, blank=True)
     ssn = m.CharField(max_length=30, null=True, blank=True)
+    address = m.CharField(max_length=100, null=True, blank=True)
     birth = m.DateField(null=True)
 
     class Meta:
         db_table = 'client' 
     
 class Employer(BaseModel):
-    name = m.CharField(max_length=100, unique=True)
+    name = m.CharField(max_length=100, unique=True, blank=False)
     address = m.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
         db_table = 'employer' 
 
 class InsuranceCarrier(BaseModel):
-    name = m.CharField(max_length=100, unique=True)
+    name = m.CharField(max_length=100, unique=True, blank=False)
     address = m.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
         db_table = 'insurance_carrier'
 
 class ClaimAdministrator(BaseModel):
-    name = m.CharField(max_length=100, unique=True)
+    name = m.CharField(max_length=100, unique=True, blank=False)
     address = m.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
         db_table = 'claim_administrator'
 
 class ClaimAdjuster(BaseModel):
-    name = m.CharField(max_length=50, unique=True)
+    name = m.CharField(max_length=50, unique=True, blank=False)
 
     class Meta:
         db_table = 'claim_adjuster' 
 
 class DefenseLawFirm(BaseModel):
-    name = m.CharField(max_length=100, unique=True)
+    name = m.CharField(max_length=100, unique=True, blank=False)
     address = m.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
         db_table = 'defense_law_firm'
 
 class DefenseAttorney(BaseModel):
-    name = m.CharField(max_length=50, unique=True)
+    name = m.CharField(max_length=50, unique=True, blank=False)
 
     class Meta:
         db_table = 'defense_attorney'
     
 class DefenseAssistant(BaseModel):
-    name = m.CharField(max_length=50, unique=True)
+    name = m.CharField(max_length=50, unique=True, blank=False)
 
     class Meta:
         db_table = 'defense_assistant'
@@ -153,7 +153,7 @@ class Case(BaseModel):
     def_assistant = m.ForeignKey(DefenseAssistant, on_delete=m.PROTECT, related_name='cases', null=True)
 
     claim_admin = m.ForeignKey(ClaimAdministrator, on_delete=m.PROTECT, related_name='cases', null=True)
-    claim_adjuster = m.ForeignKey(ClaimAdjuster, on_delete=m.PROTECT, related_name='cases', null=True)
+    claim_adjuster = m.ForeignKey(ClaimAdjuster, on_delete=m.PROTECT, related_name='cases', null=True, verbose_name='Claim Adjuster')
 
     created_at = m.DateTimeField(auto_now_add=True)
     updated_at = m.DateTimeField(auto_now=True)
