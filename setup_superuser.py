@@ -2,7 +2,7 @@ from case_manager.models import SystemUser, Attorney, Assistant
 
 
 def setup_users():
-    admins = ['andrew', 'axel', 'amanda']
+    admins = ['andrew','axel', 'amanda']
     attorneys = ['Edgar', 'Alex']
     assistants = ['Crista','Ester', 'Glenda', 'Jose', 'Laura', 'Michaell', 'Miguel', 'Victoria']
 
