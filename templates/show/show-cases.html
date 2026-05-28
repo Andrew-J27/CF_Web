@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block link %}
+<link rel="stylesheet" href="{% static 'css/show-generic.css' %}"> 
+<script src="{% static 'js/show.js' %}" defer type="module"></script>
+ 
+{% block extra_link %}
+{% endblock extra_link %}
+
+{% endblock link %}
+
+{% block main %}
+<div class="show-container">
+    <form class="search" method="GET" action="{% url list_url %}">
+        <h2 class="model-name">{{name}}</h2> 
+        <span class="spacer"></span>
+
+        <!-- Used in list cases -->
+        {% block filter %}      
+        {% endblock filter %}
+        
+        {% if search %}
+        <button class="btn-clear" type="button">
+            <i class="fi fi-br-cross"></i>
+        </button>
+        {% endif %}
+        
+        <input type="text" class="search" name="search" value="{{search}}" placeholder="Search {{name}}" columns="20"> 
+
+        <button>
+            <i class="fi fi-br-search"></i> 
+        </button>
+        <a href="{% url "create-case" %}" type="button" class="btn-create" data-behaviour="modal">
+            <i class="fi fi-sr-plus"></i> 
+        </a>
+    </form>
+
+    <div class="show">
+        <table>
+            <thead>
+                <tr>
+                    {% block labels %}
+                    {% endblock labels %}
+                    <th>Active</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr {% if detail_url %} data-url="{% url "detail-case" item.id %}"{% endif %}>
+
+                    {% block attributes %}
+                    {% endblock attributes %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="modal fade" class="modal fade">
+
+    <form method='POST' action="{% block create_url %}{% endblock create_url %}"
+     class="modal dialog create-form modal-create {% if create_active %} active {% endif %}" >
+        
+        {% csrf_token %}
+
+        <h2>Create new {{name}} </h2>
+
+        {% block create_form %}
+        {% endblock create_form %}
+
+        <div class="dialog__buttons">
+            <a class="btn-close-modal" type="button"
+                {% if create_active %}href="{% url list_url %}"{% endif %}>  
+                <i class="fi fi-br-cross"></i> Cancel
+            </a>
+
+            <button> 
+                <i class="fi fi-sr-disk"></i> Save
+            </button>
+        </div>
+    </form>
+
+    <form method='POST' action="" data-url="{% block update_url %}{% endblock update_url %}"
+        class="modal dialog update-form modal-update {% if update_active %} active {% endif %}">
+        
+
+        {% csrf_token %}
+
+        <h2>Update 
+            <span class="title-name">
+                "
+                {% if temp_name %}
+                {{temp_name}}
+                {% endif %}
+                "
+            </span>
+        </h2>
+
+        {% block update_form %}
+        {% endblock update_form %}
+
+        
+
+        <div class="dialog__buttons">
+            <a class="btn-close-modal" type="button"
+                {% if update_active %}href="{% url list_url %}"{% endif %}> 
+                <i class="fi fi-br-cross"></i> Cancel
+            </a>
+
+            <button> 
+                <i class="fi fi-br-check"></i> Confirm modify
+            </button>
+        </div>
+    </form>
+
+    <form method='POST' action="" data-url="{% block delete_url %}{% endblock delete_url %}"
+        class="modal dialog delete-form modal-delete {% if delete_active %} active {% endif %}">
+
+        {% csrf_token %}
+        <h2>Delete <span class="title-name"></span></h2>
+        <p>This action can only be reversed by an admin. Are you sure you want to delete?
+        </p>
+        
+        <p class="errorlist" styles="color: red;">
+            {{error_msg}}
+        </p>
+        <div class="dialog__buttons">
+            <a class="btn-close-modal" type="button"
+                {% if delete_active %}href="{% url list_url %}"{% endif %}>  
+                <i class="fi fi-br-cross"></i> Cancel
+            </a>
+
+            <button>
+                <i class="fi fi-br-check"></i> Confirm delete
+            </button>
+        </div>
+    </form>
+
+    <form method='POST' action="" data-url="{% block restore_url %}{% endblock restore_url %}" 
+        class="modal dialog restore-form modal-restore {% if restore_active %} active {% endif %}">
+
+        {% csrf_token %}
+        <h2>Restore <span class="title-name"></span></h2>
+        <p>This action will revert the deletion and make the item visible for every user. Are you sure you want to restore?</p>
+
+        <div class="dialog__buttons">
+            <a class="btn-close-modal" type="button"
+                {% if restore_active %}href="{% url list_url %}"{% endif %}> 
+                <i class="fi fi-br-cross"></i> Cancel
+            </a>
+            <button>
+                <i class="fi fi-br-check"></i> Confirm restore
+            </button>
+        </div>
+        
+    </form>
+
+    <div method='POST' action="" class="modal dialog error-form modal-error
+        {% if error_msg_active %} active {% endif %}">
+
+        <h2>Error while removing "<span class="title-name"></span>"</h2>
+        <p>The register can not be deleted. There is one or more cases related.</p>
+
+        <div class="dialog__buttons">
+            <a class="btn-close-modal" type="button">  
+                <i class="fi fi-br-cross"></i> Return
+            </a>  
+        </div>
+    </div>
+</div>
+
+
+{% endblock main %}

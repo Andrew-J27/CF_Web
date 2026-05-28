@@ -9,7 +9,7 @@ main {
     overflow: hidden;
 }
 
-.tabs {    
+.tabs, .adj_form {    
     flex-grow: 1;
     display: flex; 
     flex-direction: column; 
@@ -18,6 +18,8 @@ main {
     border-radius: 10px;
     border-top-left-radius: 0px;
     border-top-right-radius: 0px;
+
+    box-shadow: 1px 1px 10px gray;
 }
 
 .tab-buttons {

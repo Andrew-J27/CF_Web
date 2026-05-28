@@ -10,7 +10,7 @@ if (tabs.dataset.create === "1") {
     tabs.querySelector('button[data-tab="7"]').style.display = 'none';
     tabs.querySelector('div[data-tab="6"]').style.display = 'none';
     tabs.querySelector('div[data-tab="7"]').style.display = 'none';
-
+    
     tabs.dataset.max = "5"
 }
 

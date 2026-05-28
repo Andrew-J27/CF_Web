@@ -122,7 +122,7 @@ class DefenseAssistant(BaseModel):
 
 
 class Case(BaseModel):
-
+    
     STATUSES = [
         ('denied','Denied'),
         ('delayed','Delayed'),
@@ -157,6 +157,7 @@ class Case(BaseModel):
 
     created_at = m.DateTimeField(auto_now_add=True)
     updated_at = m.DateTimeField(auto_now=True)
+    comments = m.TextField(null=True, blank=True)
     history = HistoricalRecords()
 
     class Meta:

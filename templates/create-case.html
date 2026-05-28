@@ -79,9 +79,20 @@
                 {% endfor %} 
             </div>
             
-
         </div>
         <div class="tab-pane" data-tab="2">
+
+            <h2> Staff handling: </h2>
+            <div class="form-field">
+                {{ case_form.attorney.label_tag }}
+                {{ case_form.attorney }}
+                {{ case_form.attorney.errors }}
+            </div>
+            <div class="form-field">
+                {{ case_form.assistant.label_tag }}
+                {{ case_form.assistant }}
+                {{ case_form.assistant.errors }}
+            </div>
 
             <h2> Case Information </h2>
 
@@ -118,17 +129,7 @@
             </div>
             <span></span>
 
-            <h2> Staff handling: </h2>
-            <div class="form-field">
-                {{ case_form.attorney.label_tag }}
-                {{ case_form.attorney }}
-                {{ case_form.attorney.errors }}
-            </div>
-            <div class="form-field">
-                {{ case_form.assistant.label_tag }}
-                {{ case_form.assistant }}
-                {{ case_form.assistant.errors }}
-            </div>
+            
         </div>
         <div class="tab-pane" data-tab="3" id="injury-pane">
 
@@ -293,9 +294,11 @@
             <i class="fi fi-sr-caret-left"></i> Prev
         </button>
         <span class="spacer"></span>
+
         <button class="btn-submit">
             <i class="fi fi-sr-disk"></i> Save
         </button> 
+        
         <button class="btn-next active"> 
             Next <i class="fi fi-sr-caret-right"></i>
         </button>

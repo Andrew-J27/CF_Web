@@ -6,7 +6,6 @@ main {
     z-index: 1;
 }
 
-
 .show-container {
     overflow: hidden;
 }
@@ -22,6 +21,7 @@ main {
     background-color: #eee;
     gap: 20px;
     border-radius: 8px;
+    box-shadow: 1px 1px 10px gray;
 }
 
 .show-container h2 {

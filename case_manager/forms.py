@@ -229,6 +229,20 @@ class CaseForm(forms.ModelForm):
             'assistant':'Assistant Handling'
         }
 
+class AdjudicationForm(forms.ModelForm):
+    class Meta:
+        model = Case
+
+        fields = [
+            'adj_date', 'adj_num', 'claim_num', 'claim_status'
+        ]
+
+        widgets = {
+            'adj_date': forms.DateInput(attrs={'type': 'date'}),
+            'settlement_date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+
 
 class OptionalModelForm(forms.ModelForm):
 

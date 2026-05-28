@@ -11,6 +11,21 @@ from .forms import *
 
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
+from .decorators import admin_required
+from django.http import JsonResponse
+from .utils import soft_delete_case_with_user
+
+@login_required
+def soft_delete_case_view(request, case_id):
+    try:
+        soft_delete_case_with_user(case_id, request.user)
+        return JsonResponse({'success': True, 'message': 'Caso eliminado correctamente'})
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'message': str(e)  # Aquí verás el mensaje del trigger con el usuario Django
+        }, status=400)
  
 class Login(View):
 
@@ -506,6 +521,16 @@ class UpdateCase(View):
             'def_assistant_contact_formset': defense_assistant_contact_formset,
         }
         return render(request, 'create-case.html', context)
+
+@method_decorator(login_required, name='dispatch')
+class SetAdjudication(UpdateView):
+    model = Case
+    form_class = AdjudicationForm
+    success_url = reverse_lazy('case')
+    template_name = 'set_adjudication.html'
+    success_message = "Adjudication done succesfully"
+    
+
 @method_decorator(login_required, name='dispatch')
 class DetailCase(DetailView):
     model = Case
@@ -750,8 +775,8 @@ def case_status_context(request, form=CaseStatusForm(), return_query=True):
     
     return context
 
-
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class ListCaseStatus(BaseListView):
     model = CaseStatus
     template_name = 'show/show-status.html'
@@ -761,6 +786,7 @@ class ListCaseStatus(BaseListView):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class CreateCaseStatus(BaseCreateView):
     model = CaseStatus
     form_class = CaseStatusForm
@@ -774,6 +800,7 @@ class CreateCaseStatus(BaseCreateView):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class UpdateCaseStatus(BaseUpdateView):
     model = CaseStatus
     form_class = CaseStatusForm
@@ -786,6 +813,7 @@ class UpdateCaseStatus(BaseUpdateView):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class DeleteCaseStatus(BaseDeleteView):
     model = CaseStatus
     redirect_url = 'status'
@@ -797,6 +825,7 @@ class DeleteCaseStatus(BaseDeleteView):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class RestoreCaseStatus(BaseRestoreView):
     model = CaseStatus
     redirect_url = 'status'
@@ -836,6 +865,7 @@ def attorney_context(request, form=SystemAttorneyForm(), return_query=True):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class ListAttorney(BaseListView):
     model = Attorney
     template_name = 'show/show-attorney.html'
@@ -845,6 +875,8 @@ class ListAttorney(BaseListView):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
+
 class CreateAttorney(BaseCreateView):
     model = Attorney
     form_class = SystemAttorneyForm
@@ -857,6 +889,8 @@ class CreateAttorney(BaseCreateView):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
+
 class UpdateAttorney(BaseUpdateView):
     model = Attorney
     form_class = SystemAttorneyUpdateForm
@@ -869,6 +903,7 @@ class UpdateAttorney(BaseUpdateView):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class DeleteAttorney(BaseDeleteView):
     model = Attorney
     redirect_url = 'attorney'
@@ -880,6 +915,7 @@ class DeleteAttorney(BaseDeleteView):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class RestoreAttorney(BaseRestoreView):
     model = Attorney
     redirect_url = 'attorney'
@@ -918,6 +954,8 @@ def assistant_context(request, form=SystemAssistantForm(), return_query=True):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
+
 class ListAssistant(BaseListView):
     model = Assistant
     template_name = 'show/show-assistant.html'
@@ -927,6 +965,7 @@ class ListAssistant(BaseListView):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class CreateAssistant(BaseCreateView):
     model = Assistant
     form_class = SystemAssistantForm
@@ -939,6 +978,7 @@ class CreateAssistant(BaseCreateView):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class UpdateAssistant(BaseUpdateView):
     model = Assistant
     form_class = SystemAssistantUpdateForm
@@ -951,6 +991,7 @@ class UpdateAssistant(BaseUpdateView):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class DeleteAssistant(BaseDeleteView):
     model = Assistant
     redirect_url = 'assistant'
@@ -962,6 +1003,7 @@ class DeleteAssistant(BaseDeleteView):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class RestoreAssistant(BaseRestoreView):
     model = Assistant
     redirect_url = 'assistant'

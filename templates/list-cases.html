@@ -1,4 +1,4 @@
-{% extends "show/show-generic.html" %}
+{% extends "show/show-cases.html" %}
 
 {% load static %}
 
@@ -72,6 +72,36 @@
     <a href="{% url "case-history" item.id %}">
         <i class="fi fi-sr-time-past"></i>
     </a>
+</td>
+
+<td>
+    {% if item.active == True %}
+    <i class="fi fi-ss-check-circle"></i>
+    {% else %}
+    <i class="fi fi-ss-cross-circle"></i>
+    {% endif %}
+</td>
+<td>
+    {% if not item.adj_date and item.active %}
+        <a href="{% url "set-adjudication" item.id %}" class="btn-set-adj"> 
+            Set ADJ
+        </a>
+    {% elif item.active %}
+    <div>
+        <a href="{% url "update-case" item.id %}" class="btn-update"
+            {% if not item.active %} disabled {% endif %} data-behaviour="modal">
+            <i class="fi fi-sr-pencil"></i>
+        </a>
+        <button class="btn-delete" data-id="{{item.id}}" data-name="{{item.name}}"
+            {% if not item.active %} disabled {% endif %}>
+            <i class="fi fi-sr-trash"></i>
+        </button>
+    </div>
+    {% else %}
+    <button class='btn-restore' data-id="{{item.id}}">
+        <i class="fi fi-sr-inbox-out"></i>
+    </button>
+    {% endif %}
 </td>
 {% endblock attributes %}
 

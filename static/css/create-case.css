@@ -1,7 +1,7 @@
 @import url('tabs.css');
  
 
-.tabs {
+.tabs, .adj_form {
     margin: 1% auto;
     min-width: 60%;
 }
