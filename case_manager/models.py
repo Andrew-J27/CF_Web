@@ -47,6 +47,7 @@ class BaseModel(m.Model):
 
 class CaseStatus(BaseModel):
     name = m.CharField(max_length=50, unique=True)
+    terminal = m.BooleanField(default=False)
 
     class Meta:
         db_table = 'case_status'

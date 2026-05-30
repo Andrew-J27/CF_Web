@@ -238,9 +238,26 @@ class AdjudicationForm(forms.ModelForm):
         ]
 
         widgets = {
-            'adj_date': forms.DateInput(attrs={'type': 'date'}),
-            'settlement_date': forms.DateInput(attrs={'type': 'date'}),
+            'adj_date': forms.DateInput(attrs={'type': 'date'}), 
         }
+
+class CaseClosureForm(forms.ModelForm):
+    class Meta:
+        model = Case
+
+        fields = [
+            'status', 'comments',
+        ]
+
+        widgets = { 
+            'comments': forms.Textarea(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Limitar a solo estados que son terminales o de acuerdo
+        self.fields['status'].queryset = CaseStatus.objects.filter(terminal=True)
 
 
 

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block link %}
+<link rel="stylesheet" href="{% static 'css/set-adj.css' %}">
+
+{% endblock link %}
+
+{% block main %}
+
+<form action="" class="closure-from form" method='POST'>
+    <h2 class="case-title">{{case}}</h2>
+    {% csrf_token %}
+
+    {% for field in form %}
+
+    <div class="form-field">
+        {{field.label_tag}}
+        {{field}}
+        {{field.errors}}
+    </div>
+    
+    {% endfor %}
+
+    <span></span>
+    <button class="btn-submit active">
+        <i class="fi fi-sr-disk"></i> Save
+    </button> 
+</form>
+
+{% endblock main %}
+

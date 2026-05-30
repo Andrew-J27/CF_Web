@@ -13,6 +13,7 @@ urlpatterns = [
     path('case/create/', CreateCase.as_view(), name='create-case'),
     path('case/<int:pk>/update/', UpdateCase.as_view(), name='update-case'),
     path('case/<int:pk>/set-adjudication/', SetAdjudication.as_view(), name='set-adjudication'),
+    path('case/<int:pk>/closure/', CaseClosure.as_view(), name='case-closure'),
     path('case/<int:pk>/detail/', DetailCase.as_view(), name='detail-case'),
     path('case/<int:pk>/delete/', DeleteCase.as_view(), name='delete-case'),
     path('case/<int:pk>/restore/', RestoreCase.as_view(), name='restore-case'),

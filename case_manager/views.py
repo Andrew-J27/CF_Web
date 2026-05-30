@@ -70,6 +70,163 @@ class Home(View):
 
         return render(request, 'home.html', {'sysuser':system_user, 'role':user_role}) 
 
+ 
+# ============================================================
+# BASES REUTILIZABLES (definidas aquí mismo para el ejemplo)
+# ============================================================
+
+@method_decorator(login_required, name='dispatch')
+class BaseListView(ListView):
+    # ListView base con contexto automático
+    template_name = None
+    context_object_name = 'items'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if hasattr(self, 'get_context_function'):
+            added_context = self.get_context_function(self.request)
+            context.update(added_context)
+        return context
+
+
+@method_decorator(login_required, name='dispatch')
+class BaseCreateView(CreateView):
+    # CreateView base con manejo automático 
+    template_name = None
+    success_message = "registro creado exitosamente"
+
+    def get(self, request, *args, **kwargs):
+        # Maneja la petición GET - muestra el formulario vacío 
+        form = self.get_form()
+        context = self.get_context_function(request, form)
+        context['create_active'] = True
+        return self.render_to_response(context)
+    
+    def post(self, request, *args, **kwargs):
+        # Maneja la petición POST - procesa el formulario 
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+    
+    def form_invalid(self, form):
+        context = self.get_context_function(self.request, form)
+        context['create_active'] = True
+        return self.render_to_response(context)
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, self.success_message)
+        return response
+
+
+@method_decorator(login_required, name='dispatch')
+class BaseUpdateView(UpdateView):
+    # UpdateView base con manejo automático
+    template_name = None
+    success_message = "registro modificado exitosamente"
+
+    def get(self, request, *args, **kwargs):
+        # Maneja la petición GET - muestra el formulario con datos del objeto
+        self.object = self.get_object()
+        form = self.get_form() 
+        context = self.get_context_function(request, form)
+        context['update_active'] = True
+        context['temp_name'] = self.object
+        return self.render_to_response(context)
+    
+    def post(self, request, *args, **kwargs):
+        # Maneja la petición POST - procesa el formulario
+        self.object = self.get_object()
+        form = self.get_form()
+
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+    
+    def form_invalid(self, form):
+        context = self.get_context_function(self.request, form)
+        context['update_active'] = True
+        context['temp_name'] = self.get_object()
+        return self.render_to_response(context)
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, self.success_message)
+        return response 
+
+@method_decorator(login_required, name='dispatch')
+class BaseDeleteView(View):
+
+    # DeleteView base
+    model = None
+    redirect_url = None  # URL de lista, ej: 'status'
+    success_message = "registro eliminado exitosamente"
+    
+    def has_related_cases(self, obj):
+        """Verifica si el objeto tiene casos relacionados"""
+        if hasattr(obj, 'cases'):
+            if obj.cases.filter(active=True).exists():
+                return True
+        return False
+    
+    def get_related_cases_count(self, obj):
+        """Retorna el número de casos relacionados"""
+        if hasattr(obj, 'cases'):
+            return obj.cases.filter(active=True).count()
+        return 0
+    
+    def get(self, request, pk):
+        """Maneja GET - muestra la lista con el modal activo"""
+        obj = self.model.objects.get(id=pk)
+
+        context = self.get_context_function(request)
+        context['delete_active'] = True
+        context['temp_name'] = obj.name 
+
+        # Verificar si tiene casos relacionados
+        if self.has_related_cases(obj):
+            count = self.get_related_cases_count(obj)
+            error_msg = f"Cannot delete '{obj.name}'. It has {count} case(s) related"
+            context['error_msg'] = error_msg
+            return render(request, self.template_name, context )
+         
+        return redirect(self.redirect_url)
+    
+    def post(self, request, pk):
+        obj = self.model.objects.get(id=pk)
+        
+        # Verificar nuevamente por si acaso
+        if self.has_related_cases(obj):
+            count = self.get_related_cases_count(obj)
+            error_msg = f"Cannot delete '{obj.name}'. It has {count} case(s) related"
+            messages.error(request, error_msg)
+            # ✅ Redirigir al GET (misma URL) para mostrar el modal con error
+            return redirect(request.path)
+        
+        # Proceder con el soft delete
+        obj.soft_delete()
+        messages.success(request, self.success_message)
+        return redirect(self.redirect_url)
+
+
+@method_decorator(login_required, name='dispatch')
+class BaseRestoreView(View):
+    # RestoreView base
+    model = None
+    redirect_url = None
+    success_message = "registro restaurado exitosamente"
+    
+    def post(self, request, pk):
+        obj = self.model.objects.get(id=pk)
+        obj.restore()
+        messages.success(request, self.success_message)
+        return redirect(self.redirect_url)
+
+
+
 def CaseContext(request, form_class=CaseForm(), return_query=True):
     search = request.GET.get('search', '')
     assistant_id = request.GET.get('assistant', '')
@@ -270,7 +427,7 @@ class CreateCase(View):
             case.save()
             
             # Guardar formsets que dependen de Client (siempre)
-            client_contact_formset.instance = client
+            client_contact_formset.instance = client    
             client_contact_formset.save()
             
             # Guardar injury_formset
@@ -529,7 +686,15 @@ class SetAdjudication(UpdateView):
     success_url = reverse_lazy('case')
     template_name = 'set_adjudication.html'
     success_message = "Adjudication done succesfully"
-    
+
+@method_decorator(login_required, name='dispatch')
+class CaseClosure(UpdateView):
+    model = Case
+    form_class = CaseClosureForm
+    success_url = reverse_lazy('case')
+    template_name = 'case-closure.html'
+    success_message = "Case closure done succesfully"   
+
 
 @method_decorator(login_required, name='dispatch')
 class DetailCase(DetailView):
@@ -590,160 +755,6 @@ class ListCases(ListView):
         
         return context
 
- 
-# ============================================================
-# BASES REUTILIZABLES (definidas aquí mismo para el ejemplo)
-# ============================================================
-
-@method_decorator(login_required, name='dispatch')
-class BaseListView(ListView):
-    # ListView base con contexto automático
-    template_name = None
-    context_object_name = 'items'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if hasattr(self, 'get_context_function'):
-            added_context = self.get_context_function(self.request)
-            context.update(added_context)
-        return context
-
-
-@method_decorator(login_required, name='dispatch')
-class BaseCreateView(CreateView):
-    # CreateView base con manejo automático 
-    template_name = None
-    success_message = "registro creado exitosamente"
-
-    def get(self, request, *args, **kwargs):
-        # Maneja la petición GET - muestra el formulario vacío 
-        form = self.get_form()
-        context = self.get_context_function(request, form)
-        context['create_active'] = True
-        return self.render_to_response(context)
-    
-    def post(self, request, *args, **kwargs):
-        # Maneja la petición POST - procesa el formulario 
-        form = self.get_form()
-        if form.is_valid():
-            return self.form_valid(form)
-        else:
-            return self.form_invalid(form)
-    
-    def form_invalid(self, form):
-        context = self.get_context_function(self.request, form)
-        context['create_active'] = True
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        messages.success(self.request, self.success_message)
-        return response
-
-
-@method_decorator(login_required, name='dispatch')
-class BaseUpdateView(UpdateView):
-    # UpdateView base con manejo automático
-    template_name = None
-    success_message = "registro modificado exitosamente"
-
-    def get(self, request, *args, **kwargs):
-        # Maneja la petición GET - muestra el formulario con datos del objeto
-        self.object = self.get_object()
-        form = self.get_form() 
-        context = self.get_context_function(request, form)
-        context['update_active'] = True
-        context['temp_name'] = self.object
-        return self.render_to_response(context)
-    
-    def post(self, request, *args, **kwargs):
-        # Maneja la petición POST - procesa el formulario
-        self.object = self.get_object()
-        form = self.get_form()
-
-        if form.is_valid():
-            return self.form_valid(form)
-        else:
-            return self.form_invalid(form)
-    
-    def form_invalid(self, form):
-        context = self.get_context_function(self.request, form)
-        context['update_active'] = True
-        context['temp_name'] = self.get_object()
-        return self.render_to_response(context)
-    
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        messages.success(self.request, self.success_message)
-        return response 
-
-@method_decorator(login_required, name='dispatch')
-class BaseDeleteView(View):
-
-    # DeleteView base
-    model = None
-    redirect_url = None  # URL de lista, ej: 'status'
-    success_message = "registro eliminado exitosamente"
-    
-    def has_related_cases(self, obj):
-        """Verifica si el objeto tiene casos relacionados"""
-        if hasattr(obj, 'cases'):
-            if obj.cases.filter(active=True).exists():
-                return True
-        return False
-    
-    def get_related_cases_count(self, obj):
-        """Retorna el número de casos relacionados"""
-        if hasattr(obj, 'cases'):
-            return obj.cases.filter(active=True).count()
-        return 0
-    
-    def get(self, request, pk):
-        """Maneja GET - muestra la lista con el modal activo"""
-        obj = self.model.objects.get(id=pk)
-
-        context = self.get_context_function(request)
-        context['delete_active'] = True
-        context['temp_name'] = obj.name 
-
-        # Verificar si tiene casos relacionados
-        if self.has_related_cases(obj):
-            count = self.get_related_cases_count(obj)
-            error_msg = f"Cannot delete '{obj.name}'. It has {count} case(s) related"
-            context['error_msg'] = error_msg
-            return render(request, self.template_name, context )
-         
-        return redirect(self.redirect_url)
-    
-    def post(self, request, pk):
-        obj = self.model.objects.get(id=pk)
-        
-        # Verificar nuevamente por si acaso
-        if self.has_related_cases(obj):
-            count = self.get_related_cases_count(obj)
-            error_msg = f"Cannot delete '{obj.name}'. It has {count} case(s) related"
-            messages.error(request, error_msg)
-            # ✅ Redirigir al GET (misma URL) para mostrar el modal con error
-            return redirect(request.path)
-        
-        # Proceder con el soft delete
-        obj.soft_delete()
-        messages.success(request, self.success_message)
-        return redirect(self.redirect_url)
-
-
-@method_decorator(login_required, name='dispatch')
-class BaseRestoreView(View):
-    # RestoreView base
-    model = None
-    redirect_url = None
-    success_message = "registro restaurado exitosamente"
-    
-    def post(self, request, pk):
-        obj = self.model.objects.get(id=pk)
-        obj.restore()
-        messages.success(request, self.success_message)
-        return redirect(self.redirect_url)
 
 
 # ============================================================
@@ -1382,7 +1393,6 @@ class ListClient(BaseListView):
     def get_context_function(self, request):
         return client_context(request)
 
-
 @method_decorator(login_required, name='dispatch')
 class CreateClient(BaseCreateView):
     model = Client
@@ -1393,7 +1403,6 @@ class CreateClient(BaseCreateView):
     
     def get_context_function(self, request, form):
         return client_context(request, form)
-
 
 @method_decorator(login_required, name='dispatch')
 class UpdateClient(BaseUpdateView):
@@ -1406,7 +1415,6 @@ class UpdateClient(BaseUpdateView):
     def get_context_function(self, request, form):
         return client_context(request, form)
 
-
 @method_decorator(login_required, name='dispatch')
 class DeleteClient(BaseDeleteView):
     model = Client
@@ -1416,7 +1424,6 @@ class DeleteClient(BaseDeleteView):
 
     def get_context_function(self, request):
         return client_context(request)
-
 
 @method_decorator(login_required, name='dispatch')
 class RestoreClient(BaseRestoreView):
