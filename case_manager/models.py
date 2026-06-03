@@ -138,7 +138,7 @@ class Case(BaseModel):
  
     settlement_date = m.DateField(null=True, blank=True)
 
-    date_assigned = m.DateField(null=True, blank=True, help_text="Fecha en que el caso fue asignado a la firma o al asistente")
+    date_assigned = m.DateField(null=True, blank=True, help_text="Fecha en que el caso fue asignado.")
 
     status = m.ForeignKey(CaseStatus, on_delete=m.PROTECT, related_name='cases')
     attorney = m.ForeignKey(Attorney, on_delete=m.PROTECT, related_name='cases')
@@ -154,7 +154,7 @@ class Case(BaseModel):
     def_assistant = m.ForeignKey(DefenseAssistant, on_delete=m.PROTECT, related_name='cases', null=True)
 
     claim_admin = m.ForeignKey(ClaimAdministrator, on_delete=m.PROTECT, related_name='cases', null=True)
-    claim_adjuster = m.ForeignKey(ClaimAdjuster, on_delete=m.PROTECT, related_name='cases', null=True, verbose_name='Claim Adjuster')
+    claim_adjuster = m.ForeignKey(ClaimAdjuster, on_delete=m.PROTECT, related_name='cases', null=True)
 
     created_at = m.DateTimeField(auto_now_add=True)
     updated_at = m.DateTimeField(auto_now=True)

@@ -14,6 +14,7 @@ from django.contrib.auth.decorators import login_required
 from .decorators import admin_required
 from django.http import JsonResponse
 from .utils import soft_delete_case_with_user
+from django.core.exceptions import PermissionDenied
 
 @login_required
 def soft_delete_case_view(request, case_id):
@@ -27,6 +28,7 @@ def soft_delete_case_view(request, case_id):
             'message': str(e)  # Aquí verás el mensaje del trigger con el usuario Django
         }, status=400)
  
+
 class Login(View):
 
     def get(self, request):
@@ -120,7 +122,6 @@ class BaseCreateView(CreateView):
         messages.success(self.request, self.success_message)
         return response
 
-
 @method_decorator(login_required, name='dispatch')
 class BaseUpdateView(UpdateView):
     # UpdateView base con manejo automático
@@ -211,7 +212,6 @@ class BaseDeleteView(View):
         messages.success(request, self.success_message)
         return redirect(self.redirect_url)
 
-
 @method_decorator(login_required, name='dispatch')
 class BaseRestoreView(View):
     # RestoreView base
@@ -224,7 +224,6 @@ class BaseRestoreView(View):
         obj.restore()
         messages.success(request, self.success_message)
         return redirect(self.redirect_url)
-
 
 
 def CaseContext(request, form_class=CaseForm(), return_query=True):
@@ -290,7 +289,6 @@ def CaseContext(request, form_class=CaseForm(), return_query=True):
     context['items'] = queryset
     
     return context
-
 
 @method_decorator(login_required, name='dispatch')
 class CreateCase(View):
@@ -473,7 +471,14 @@ class CreateCase(View):
 class UpdateCase(View):
     
     def get(self, request, pk):
+
         case = get_object_or_404(Case, id=pk)
+        usr = request.user.systemuser
+
+        print(usr.role)
+
+        if usr.role != 'admin' and not (usr == case.attorney.user or usr == case.assistant.user):
+            raise PermissionDenied("This case is not related to you, go back.")
         
         client = case.client
         employer = case.employer
@@ -989,7 +994,7 @@ class CreateAssistant(BaseCreateView):
 
 
 @method_decorator(login_required, name='dispatch')
-@method_decorator(admin_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')  
 class UpdateAssistant(BaseUpdateView):
     model = Assistant
     form_class = SystemAssistantUpdateForm
@@ -1053,7 +1058,7 @@ def employer_context(request, form=EmployerForm(), return_query=True):
     return context
 
 
-@method_decorator(login_required, name='dispatch')
+
 class ListEmployer(BaseListView):
     model = Employer
     template_name = 'show/show-employer.html'
@@ -1062,7 +1067,7 @@ class ListEmployer(BaseListView):
         return employer_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class CreateEmployer(BaseCreateView):
     model = Employer
     form_class = EmployerForm
@@ -1074,7 +1079,7 @@ class CreateEmployer(BaseCreateView):
         return employer_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class UpdateEmployer(BaseUpdateView):
     model = Employer
     form_class = EmployerForm
@@ -1086,7 +1091,7 @@ class UpdateEmployer(BaseUpdateView):
         return employer_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class DeleteEmployer(BaseDeleteView):
     model = Employer
     redirect_url = 'employer'
@@ -1097,7 +1102,7 @@ class DeleteEmployer(BaseDeleteView):
         return employer_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class RestoreEmployer(BaseRestoreView):
     model = Employer
     redirect_url = 'employer'
@@ -1136,7 +1141,7 @@ def insurance_carrier_context(request, form=InsuranceCarrierForm(), return_query
     return context
 
 
-@method_decorator(login_required, name='dispatch')
+
 class ListInsuranceCarrier(BaseListView):
     model = InsuranceCarrier
     template_name = 'show/show-insurance-carrier.html'
@@ -1145,7 +1150,7 @@ class ListInsuranceCarrier(BaseListView):
         return insurance_carrier_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class CreateInsuranceCarrier(BaseCreateView):
     model = InsuranceCarrier
     form_class = InsuranceCarrierForm
@@ -1157,7 +1162,7 @@ class CreateInsuranceCarrier(BaseCreateView):
         return insurance_carrier_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class UpdateInsuranceCarrier(BaseUpdateView):
     model = InsuranceCarrier
     form_class = InsuranceCarrierForm
@@ -1169,7 +1174,7 @@ class UpdateInsuranceCarrier(BaseUpdateView):
         return insurance_carrier_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class DeleteInsuranceCarrier(BaseDeleteView):
     model = InsuranceCarrier
     redirect_url = 'insurance-carrier'
@@ -1180,7 +1185,7 @@ class DeleteInsuranceCarrier(BaseDeleteView):
         return insurance_carrier_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class RestoreInsuranceCarrier(BaseRestoreView):
     model = InsuranceCarrier
     redirect_url = 'insurance-carrier'
@@ -1218,7 +1223,7 @@ def claim_administrator_context(request, form=ClaimAdministratorForm(), return_q
     return context
 
 
-@method_decorator(login_required, name='dispatch')
+
 class ListClaimAdministrator(BaseListView):
     model = ClaimAdministrator
     template_name = 'show/show-claim-administrator.html'
@@ -1227,7 +1232,7 @@ class ListClaimAdministrator(BaseListView):
         return claim_administrator_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class CreateClaimAdministrator(BaseCreateView):
     model = ClaimAdministrator
     form_class = ClaimAdministratorForm
@@ -1239,7 +1244,7 @@ class CreateClaimAdministrator(BaseCreateView):
         return claim_administrator_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class UpdateClaimAdministrator(BaseUpdateView):
     model = ClaimAdministrator
     form_class = ClaimAdministratorForm
@@ -1251,7 +1256,7 @@ class UpdateClaimAdministrator(BaseUpdateView):
         return claim_administrator_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class DeleteClaimAdministrator(BaseDeleteView):
     model = ClaimAdministrator
     redirect_url = 'claim-administrator'
@@ -1259,7 +1264,7 @@ class DeleteClaimAdministrator(BaseDeleteView):
     success_message = "Claim Administrator eliminado exitosamente"
 
 
-@method_decorator(login_required, name='dispatch')
+
 class RestoreClaimAdministrator(BaseRestoreView):
     model = ClaimAdministrator
     redirect_url = 'claim-administrator'
@@ -1301,7 +1306,7 @@ def defense_law_firm_context(request, form=DefenseLawFirmForm(), return_query=Tr
     return context
 
 
-@method_decorator(login_required, name='dispatch')
+
 class ListDefenseLawFirm(BaseListView):
     model = DefenseLawFirm
     template_name = 'show/show-defense-law-firm.html'
@@ -1310,7 +1315,7 @@ class ListDefenseLawFirm(BaseListView):
         return defense_law_firm_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class CreateDefenseLawFirm(BaseCreateView):
     model = DefenseLawFirm
     form_class = DefenseLawFirmForm
@@ -1322,7 +1327,7 @@ class CreateDefenseLawFirm(BaseCreateView):
         return defense_law_firm_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class UpdateDefenseLawFirm(BaseUpdateView):
     model = DefenseLawFirm
     form_class = DefenseLawFirmForm
@@ -1334,7 +1339,7 @@ class UpdateDefenseLawFirm(BaseUpdateView):
         return defense_law_firm_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class DeleteDefenseLawFirm(BaseDeleteView):
     model = DefenseLawFirm
     redirect_url = 'defense-law-firm'
@@ -1345,7 +1350,7 @@ class DeleteDefenseLawFirm(BaseDeleteView):
         return defense_law_firm_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class RestoreDefenseLawFirm(BaseRestoreView):
     model = DefenseLawFirm
     redirect_url = 'defense-law-firm'
@@ -1385,7 +1390,7 @@ def client_context(request, form=ClientForm(), return_query=True):
     return context
 
 
-@method_decorator(login_required, name='dispatch')
+
 class ListClient(BaseListView):
     model = Client
     template_name = 'show/show-client.html'
@@ -1393,7 +1398,6 @@ class ListClient(BaseListView):
     def get_context_function(self, request):
         return client_context(request)
 
-@method_decorator(login_required, name='dispatch')
 class CreateClient(BaseCreateView):
     model = Client
     form_class = ClientForm
@@ -1404,7 +1408,6 @@ class CreateClient(BaseCreateView):
     def get_context_function(self, request, form):
         return client_context(request, form)
 
-@method_decorator(login_required, name='dispatch')
 class UpdateClient(BaseUpdateView):
     model = Client
     form_class = ClientForm
@@ -1415,7 +1418,6 @@ class UpdateClient(BaseUpdateView):
     def get_context_function(self, request, form):
         return client_context(request, form)
 
-@method_decorator(login_required, name='dispatch')
 class DeleteClient(BaseDeleteView):
     model = Client
     redirect_url = 'client'
@@ -1425,7 +1427,6 @@ class DeleteClient(BaseDeleteView):
     def get_context_function(self, request):
         return client_context(request)
 
-@method_decorator(login_required, name='dispatch')
 class RestoreClient(BaseRestoreView):
     model = Client
     redirect_url = 'client'
@@ -1462,7 +1463,7 @@ def claim_adjuster_context(request, form=ClaimAdjusterForm(), return_query=True)
     return context
 
 
-@method_decorator(login_required, name='dispatch')
+
 class ListClaimAdjuster(BaseListView):
     model = ClaimAdjuster
     template_name = 'show/show-claim-adjuster.html'
@@ -1471,7 +1472,7 @@ class ListClaimAdjuster(BaseListView):
         return claim_adjuster_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class CreateClaimAdjuster(BaseCreateView):
     model = ClaimAdjuster
     form_class = ClaimAdjusterForm
@@ -1483,7 +1484,7 @@ class CreateClaimAdjuster(BaseCreateView):
         return claim_adjuster_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class UpdateClaimAdjuster(BaseUpdateView):
     model = ClaimAdjuster
     form_class = ClaimAdjusterForm
@@ -1495,7 +1496,7 @@ class UpdateClaimAdjuster(BaseUpdateView):
         return claim_adjuster_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class DeleteClaimAdjuster(BaseDeleteView):
     model = ClaimAdjuster
     redirect_url = 'claim-adjuster'
@@ -1506,7 +1507,7 @@ class DeleteClaimAdjuster(BaseDeleteView):
         return claim_adjuster_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class RestoreClaimAdjuster(BaseRestoreView):
     model = ClaimAdjuster
     redirect_url = 'claim-adjuster'
@@ -1543,7 +1544,7 @@ def defense_attorney_context(request, form=DefenseAttorneyForm(), return_query=T
     return context
 
 
-@method_decorator(login_required, name='dispatch')
+
 class ListDefenseAttorney(BaseListView):
     model = DefenseAttorney
     template_name = 'show/show-defense-attorney.html'
@@ -1552,7 +1553,7 @@ class ListDefenseAttorney(BaseListView):
         return defense_attorney_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class CreateDefenseAttorney(BaseCreateView):
     model = DefenseAttorney
     form_class = DefenseAttorneyForm
@@ -1564,7 +1565,7 @@ class CreateDefenseAttorney(BaseCreateView):
         return defense_attorney_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class UpdateDefenseAttorney(BaseUpdateView):
     model = DefenseAttorney
     form_class = DefenseAttorneyForm
@@ -1576,7 +1577,7 @@ class UpdateDefenseAttorney(BaseUpdateView):
         return defense_attorney_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class DeleteDefenseAttorney(BaseDeleteView):
     model = DefenseAttorney
     redirect_url = 'defense-attorney'
@@ -1587,7 +1588,7 @@ class DeleteDefenseAttorney(BaseDeleteView):
         return defense_attorney_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class RestoreDefenseAttorney(BaseRestoreView):
     model = DefenseAttorney
     redirect_url = 'defense-attorney'
@@ -1624,7 +1625,7 @@ def defense_assistant_context(request, form=DefenseAssistantForm(), return_query
     return context
 
 
-@method_decorator(login_required, name='dispatch')
+
 class ListDefenseAssistant(BaseListView):
     model = DefenseAssistant
     template_name = 'show/show-defense-assistant.html'
@@ -1633,7 +1634,7 @@ class ListDefenseAssistant(BaseListView):
         return defense_assistant_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class CreateDefenseAssistant(BaseCreateView):
     model = DefenseAssistant
     form_class = DefenseAssistantForm
@@ -1645,7 +1646,7 @@ class CreateDefenseAssistant(BaseCreateView):
         return defense_assistant_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class UpdateDefenseAssistant(BaseUpdateView):
     model = DefenseAssistant
     form_class = DefenseAssistantForm
@@ -1657,7 +1658,7 @@ class UpdateDefenseAssistant(BaseUpdateView):
         return defense_assistant_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class DeleteDefenseAssistant(BaseDeleteView):
     model = DefenseAssistant
     redirect_url = 'defense-assistant'
@@ -1668,7 +1669,7 @@ class DeleteDefenseAssistant(BaseDeleteView):
         return defense_assistant_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class RestoreDefenseAssistant(BaseRestoreView):
     model = DefenseAssistant
     redirect_url = 'defense-assistant'
@@ -1705,7 +1706,7 @@ def injury_type_context(request, form=InjuryTypeForm(), return_query=True):
     return context
 
 
-@method_decorator(login_required, name='dispatch')
+
 class ListInjuryType(BaseListView):
     model = InjuryType
     template_name = 'show/show-injury-type.html'
@@ -1714,7 +1715,7 @@ class ListInjuryType(BaseListView):
         return injury_type_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class CreateInjuryType(BaseCreateView):
     model = InjuryType
     form_class = InjuryTypeForm
@@ -1726,7 +1727,7 @@ class CreateInjuryType(BaseCreateView):
         return injury_type_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class UpdateInjuryType(BaseUpdateView):
     model = InjuryType
     form_class = InjuryTypeForm
@@ -1738,7 +1739,7 @@ class UpdateInjuryType(BaseUpdateView):
         return injury_type_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class DeleteInjuryType(BaseDeleteView):
     model = InjuryType
     redirect_url = 'injury-type'
@@ -1749,7 +1750,7 @@ class DeleteInjuryType(BaseDeleteView):
         return injury_type_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class RestoreInjuryType(BaseRestoreView):
     model = InjuryType
     redirect_url = 'injury-type'
@@ -1790,7 +1791,7 @@ def body_part_context(request, form=BodyPartForm(), return_query=True):
     return context
 
 
-@method_decorator(login_required, name='dispatch')
+
 class ListBodyPart(BaseListView):
     model = BodyPart
     template_name = 'show/show-body-part.html'
@@ -1799,7 +1800,7 @@ class ListBodyPart(BaseListView):
         return body_part_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class CreateBodyPart(BaseCreateView):
     model = BodyPart
     form_class = BodyPartForm
@@ -1811,7 +1812,7 @@ class CreateBodyPart(BaseCreateView):
         return body_part_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class UpdateBodyPart(BaseUpdateView):
     model = BodyPart
     form_class = BodyPartForm
@@ -1823,7 +1824,7 @@ class UpdateBodyPart(BaseUpdateView):
         return body_part_context(request, form)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class DeleteBodyPart(BaseDeleteView):
     model = BodyPart
     redirect_url = 'body-part'
@@ -1834,7 +1835,7 @@ class DeleteBodyPart(BaseDeleteView):
         return body_part_context(request)
 
 
-@method_decorator(login_required, name='dispatch')
+
 class RestoreBodyPart(BaseRestoreView):
     model = BodyPart
     redirect_url = 'body-part'
@@ -1873,7 +1874,7 @@ def injury_context(request, form=InjuryForm(), return_query=True):
     
     return context
 
-@method_decorator(login_required, name='dispatch')
+
 class ListInjury(BaseListView):
     model = Injury
     template_name = 'show/show-injury.html'
@@ -1885,7 +1886,7 @@ class ListInjury(BaseListView):
         return context
 
 
-@method_decorator(login_required, name='dispatch')
+
 class CreateInjury(BaseCreateView):
     model = Injury
     form_class = InjuryForm
@@ -1900,7 +1901,7 @@ class CreateInjury(BaseCreateView):
         return context
 
 
-@method_decorator(login_required, name='dispatch')
+
 class UpdateInjury(BaseUpdateView):
     model = Injury
     form_class = InjuryForm
@@ -1915,7 +1916,7 @@ class UpdateInjury(BaseUpdateView):
         return context
 
 
-@method_decorator(login_required, name='dispatch')
+
 class DeleteInjury(BaseDeleteView):
     model = Injury
     redirect_url = 'injury'
@@ -2090,7 +2091,7 @@ class CaseHistory(View):
                 # Para campos que no tienen verbose_name, formatear el nombre
                 field_verbose_names[field.name] = field.name.replace('_', ' ').title()
         
-        # Diccionario adicional para campos personalizados (si necesitas sobrescribir)
+        # Diccionario adicional para campos personalizados 
         CUSTOM_NAMES = {
             'adj_num': 'Adjudication Number',
             'claim_num': 'Claim Number',
@@ -2102,7 +2103,7 @@ class CaseHistory(View):
             'claim_adjuster': 'Claim Adjuster',
         }
         
-        # Combinar verbose_name con nombres personalizados (los personalizados tienen prioridad)
+        # Combinar verbose_name con nombres personalizados  
         for field_name, custom_name in CUSTOM_NAMES.items():
             field_verbose_names[field_name] = custom_name
         

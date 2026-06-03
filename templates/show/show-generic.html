@@ -5,13 +5,12 @@
 {% block link %}
 <link rel="stylesheet" href="{% static 'css/show-generic.css' %}"> 
 <script src="{% static 'js/show.js' %}" defer type="module"></script>
- 
 {% block extra_link %}
 {% endblock extra_link %}
 
 {% endblock link %}
 
-{% block main %}
+{% block main %}    
 <div class="show-container">
     <form class="search" method="GET" action="{% url list_url %}">
         <h2 class="model-name">{{name}}</h2> 
