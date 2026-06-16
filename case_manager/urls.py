@@ -116,4 +116,6 @@ urlpatterns = [
     path('injury/<int:pk>/delete/', DeleteInjury.as_view(), name='delete-injury'),
     path('injury/<int:pk>/restore/', RestoreInjury.as_view(), name='restore-injury'),
 
+    path('global-reports/', GlobalReport.as_view(), name='global-reports'),
+
 ]

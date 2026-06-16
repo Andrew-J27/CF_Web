@@ -13,12 +13,13 @@
         <h1>Comley Fresch</h1>
         <div>
             <label>Username:
-                <input type="text" name="username">
+                <input type="text" name="username" value="{{username}}">
             </label>
             <label>Password:
                 <input type="password" name="password">
             </label>
 
+            <span class="error-span">{{error_msg}}</span>
             <button>Log In</button>
         </div>
     </form>

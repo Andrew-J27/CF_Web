@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block link %}
+<link rel="stylesheet" href="{% static "css/table.css" %}">
+<link rel="stylesheet" href="{% static "css/show-generic.css" %}">
+<link rel="stylesheet" href="{% static "css/report.css" %}">
+<link rel="stylesheet" href="{% static "css/global-reports.css" %}">
+{% endblock link %}
+
+{% block main %}
+<div class="show-container">
+    <h2>Global reports of Comley Fresch</h2>
+
+    <form action="" method="post" class="card global-report">
+        {% csrf_token %}
+        All cases report
+        <input type="hidden" name="report_type" value="global">
+        <button type="submit"> 
+            <i class="fi fi-sr-file-excel"></i> Download
+        </button>
+    </form>
+
+    <h3></h3>
+    {% for atty in attorneys %}
+    <form action="" method="post" class="card global-report">
+        {% csrf_token %}
+        {{atty.name}} report
+        <input type="hidden" name="report_type" value="attorney">
+        <input type="hidden" name="person_id" value="{{ atty.id }}">
+        <button type="submit"> 
+            <i class="fi fi-sr-file-excel"></i> Download
+        </button>
+    </form>
+    {% endfor %}
+
+    {% for asst in assistants %}
+    <form action="" method="post" class="card global-report">
+        {% csrf_token %}
+        {{asst.name}} report
+        <input type="hidden" name="report_type" value="assistant">
+        <input type="hidden" name="person_id" value="{{ asst.id }}">
+        <button type="submit"> 
+            <i class="fi fi-sr-file-excel"></i> Download
+        </button>
+    </form>
+    {% endfor %}
+</div>
+
+{% endblock main %}

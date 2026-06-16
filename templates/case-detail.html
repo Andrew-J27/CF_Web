@@ -12,24 +12,26 @@
         {{case.name}} 
         <span class="spacer"></span>
 
-        <a href="{% url 'case-closure' case.id %}" class="close-btn">
-            <i class="fi fi-sr-inbox-full"></i>
-        </a>
-
         <a href="{% url 'case-history' case.id %}" class="update-btn">
             <i class="fi fi-sr-time-past"></i>
         </a>
 
+        {% if not case.status.terminal %}
+        <a href="{% url 'case-closure' case.id %}" class="close-btn">
+            <i class="fi fi-sr-inbox-full"></i>
+        </a>
+        
         <a href="{% url 'update-case' case.id %}" class="update-btn">
             <i class="fi fi-sr-pencil"></i>
         </a>
-
+        
         <form action="{% url 'delete-case' case.id %}" class="delete-case" method='POST'>
             {% csrf_token %}
             <button class="delete-btn">
                 <i class="fi fi-sr-trash"></i>
             </button>
         </form>
+        {% endif %}
     </h2>
 
     <div class="card">

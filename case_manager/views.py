@@ -13,7 +13,7 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from .decorators import admin_required
 from django.http import JsonResponse
-from .utils import soft_delete_case_with_user
+from .utils import soft_delete_case_with_user       
 from django.core.exceptions import PermissionDenied
 
 @login_required
@@ -45,7 +45,11 @@ class Login(View):
             login(request, user)
             return redirect('home')
         else:
-            return render(request, 'login.html', {})
+            context = {
+                'username':username,
+                'error_msg':'* Invalid credentials' if username and password else '* Insert credentials'
+            }
+            return render(request, 'login.html', context)
 
 class Logout(View):
     def get(self, request):
@@ -399,7 +403,7 @@ class CreateCase(View):
             case.client = client
             case.employer = employer
             
-            # ✅ CORREGIDO: Procesar forms OPCIONALES
+            # CORREGIDO: Procesar forms OPCIONALES
             # El OptionalModelForm.save() debe retornar None si no hay datos
             insurance = insurance_form.save() if insurance_form.has_changed() else None
             def_lawfirm = def_lawfirm_form.save() if def_lawfirm_form.has_changed() else None
@@ -432,7 +436,7 @@ class CreateCase(View):
             injury_formset.instance = case
             injury_formset.save()
             
-            # ✅ CORREGIDO: Guardar formsets solo si las instancias existen
+            # CORREGIDO: Guardar formsets solo si las instancias existen
             if claim_adjuster:
                 claim_adjuster_contact_formset.instance = claim_adjuster
                 claim_adjuster_contact_formset.save()
@@ -479,6 +483,9 @@ class UpdateCase(View):
 
         if usr.role != 'admin' and not (usr == case.attorney.user or usr == case.assistant.user):
             raise PermissionDenied("This case is not related to you, go back.")
+        
+        if case.status.terminal:
+            raise PermissionDenied("This case is terminated")
         
         client = case.client
         employer = case.employer
@@ -548,7 +555,7 @@ class UpdateCase(View):
         client_form = ClientForm(data, prefix='client', instance=client)
         employer_form = EmployerForm(data, prefix='employer', instance=employer)
         
-        # ✅ MISMA LÓGICA QUE GET: normal si existe, choice si no
+        # MISMA LÓGICA QUE GET: normal si existe, choice si no
         insurance_form = InsuranceCarrierForm(data, prefix='insurance', instance=insurance) if insurance else InsuranceCarrierChoiceForm(data, prefix='insurance')
         def_lawfirm_form = DefenseLawFirmForm(data, prefix='def_lawfirm', instance=def_lawfirm) if def_lawfirm else DefenseLawFirmChoiceForm(data, prefix='def_lawfirm')
         def_attorney_form = DefenseAttorneyForm(data, prefix='def_attorney', instance=def_attorney) if def_attorney else DefenseAttorneyChoiceForm(data, prefix='def_attorney')
@@ -2075,6 +2082,269 @@ class Report(View):
         
         return response
     
+
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+from django.http import HttpResponse
+from django.views import View
+from django.shortcuts import render
+from django.db.models import Q
+from datetime import date
+
+class GlobalReport(View):
+    
+    def get(self, request):
+        context = {
+            'attorneys': Attorney.objects.filter(active=True),
+            'assistants': Assistant.objects.filter(active=True),
+        }
+        return render(request, 'global-reports.html', context)
+    
+    def post(self, request):
+        """Handle POST requests for report generation"""
+        report_type = request.POST.get('report_type')
+        person_id = request.POST.get('person_id')
+        
+        if report_type == 'global':
+            return self.report_global(request)
+        elif report_type == 'attorney':
+            return self.attorney_global(request, person_id)
+        elif report_type == 'assistant':
+            return self.assistant_global(request, person_id)
+        
+        return self.get(request)
+    
+    def attorney_global(self, request, pk):
+        """Generate report for a specific attorney"""
+        attorney = Attorney.objects.get(pk=pk, active=True)
+        return self.generate_excel_report(
+            person=attorney,
+            person_type='attorney',
+            title=f"{attorney.name} Global Report"
+        )
+    
+    def assistant_global(self, request, pk):
+        """Generate report for a specific assistant"""
+        assistant = Assistant.objects.get(pk=pk, active=True)
+        return self.generate_excel_report(
+            person=assistant,
+            person_type='assistant',
+            title=f"{assistant.name} Global Report"
+        )
+    
+    def report_global(self, request):
+        """Generate global report for all cases"""
+        return self.generate_excel_report(
+            person=None,
+            person_type='global',
+            title="All Cases Global Report"
+        )
+    
+    def generate_excel_report(self, person, person_type, title):
+        """Generate Excel report"""
+        # Create workbook and worksheet
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Global Report"
+        
+        # Styles
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        header_font = Font(color="FFFFFF", bold=True, size=12)
+        subheader_fill = PatternFill(start_color="B8CCE4", end_color="B8CCE4", fill_type="solid")
+        subheader_font = Font(bold=True, size=11)
+        border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        
+        current_row = 1
+        
+        # Title
+        ws.merge_cells(f'A{current_row}:F{current_row}')
+        title_cell = ws[f'A{current_row}']
+        title_cell.value = title
+        title_cell.font = Font(bold=True, size=14)
+        title_cell.alignment = Alignment(horizontal='center')
+        current_row += 2
+        
+        # Person info
+        if person:
+            ws[f'A{current_row}'] = "Name:"
+            ws[f'B{current_row}'] = person.name
+            ws[f'A{current_row}'].font = Font(bold=True, size=11)
+            ws[f'D{current_row}'] = "Role:"
+            ws[f'E{current_row}'] = person_type.capitalize()
+            ws[f'D{current_row}'].font = Font(bold=True, size=11)
+            current_row += 2
+        
+        # Get cases based on person type
+        if person_type == 'attorney':
+            active_cases = Case.objects.filter(active=True, attorney=person, settlement_date__isnull=True).exclude(status__name__icontains='dismiss')
+            settled_cases = Case.objects.filter(active=True, attorney=person, settlement_date__isnull=False)
+            dismissed_cases = Case.objects.filter(active=True, attorney=person, status__name__icontains='dismiss')
+            dropped_subbed = Case.objects.filter(active=True, attorney=person, status__name__in=['Dropped', 'Sub Out'])
+        elif person_type == 'assistant':
+            active_cases = Case.objects.filter(active=True, assistant=person, settlement_date__isnull=True).exclude(status__name__icontains='dismiss')
+            settled_cases = Case.objects.filter(active=True, assistant=person, settlement_date__isnull=False)
+            dismissed_cases = Case.objects.filter(active=True, assistant=person, status__name__icontains='dismiss')
+            dropped_subbed = Case.objects.filter(active=True, assistant=person, status__name__in=['Dropped', 'Sub Out'])
+        else:  # global report
+            active_cases = Case.objects.filter(active=True, settlement_date__isnull=True).exclude(status__name__icontains='dismiss')
+            settled_cases = Case.objects.filter(active=True, settlement_date__isnull=False)
+            dismissed_cases = Case.objects.filter(active=True, status__name__icontains='dismiss')
+            dropped_subbed = Case.objects.filter(active=True, status__name__in=['Dropped', 'Sub Out'])
+        
+        # Helper function to write tables
+        def write_table(title, data, columns, row_start):
+            # Determine number of columns
+            num_cols = len(columns)
+            end_col_letter = get_column_letter(num_cols)
+            
+            # Title - merge exact number of columns
+            ws.merge_cells(f'A{row_start}:{end_col_letter}{row_start}')
+            title_cell = ws[f'A{row_start}']
+            title_cell.value = title
+            title_cell.font = Font(bold=True, size=12)
+            title_cell.fill = subheader_fill
+            title_cell.alignment = Alignment(horizontal='center', vertical='center')
+            ws.row_dimensions[row_start].height = 25
+            row_start += 1
+            
+            # Headers
+            header_colors = {
+                'Case Name': header_fill,
+                'Attorney': header_fill,
+                'Assistant': header_fill,
+                'Status': header_fill,
+                'Comments': header_fill,
+                'Days Active': header_fill,
+                'Settlement Date': header_fill
+            }
+            
+            for col_idx, col_name in enumerate(columns, 1):
+                cell = ws.cell(row=row_start, column=col_idx, value=col_name)
+                cell.font = header_font
+                cell.fill = header_colors.get(col_name, header_fill)
+                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+                cell.border = border
+                ws.row_dimensions[row_start].height = 20
+            
+            row_start += 1
+            
+            # Data
+            for item in data:
+                for col_idx, key in enumerate(columns, 1):
+                    value = ''
+                    
+                    # Map display names to actual data
+                    if key == 'Case Name':
+                        value = item.name()
+                    elif key == 'Days Active':
+                        days = item.days_active()
+                        value = days if days and days != "Case has not been adjudicated." else "N/A"
+                    elif key == 'Attorney':
+                        value = item.attorney.name if hasattr(item, 'attorney') else ''
+                    elif key == 'Assistant':
+                        value = item.assistant.name if hasattr(item, 'assistant') else ''
+                    elif key == 'Status':
+                        value = item.status.name
+                    elif key == 'Comments':
+                        value = item.comments or ''
+                    elif key == 'Settlement Date':
+                        value = item.settlement_date.strftime('%Y-%m-%d') if item.settlement_date else ''
+                    else:
+                        # Handle any other attributes
+                        if hasattr(item, key):
+                            attr_value = getattr(item, key)
+                            if hasattr(attr_value, 'name'):
+                                value = attr_value.name
+                            elif attr_value:
+                                value = str(attr_value)
+                    
+                    cell = ws.cell(row=row_start, column=col_idx, value=value)
+                    cell.border = border
+                    cell.alignment = Alignment(horizontal='left' if key == 'Case Name' else 'center', 
+                                            vertical='center', 
+                                            wrap_text=True)
+                    
+                    # Set row height for better readability
+                    ws.row_dimensions[row_start].height = 18
+                    
+                    # For comments, enable text wrapping and set higher row height if needed
+                    if key == 'Comments' and len(str(value)) > 50:
+                        ws.row_dimensions[row_start].height = 30
+                
+                row_start += 1
+            
+            return row_start + 1  # Add spacing
+        
+        # Write each table with appropriate columns
+        # 1. Active Cases
+        if active_cases.exists():
+            columns = ['Case Name', 'Days Active']
+            if person_type == 'attorney':
+                columns.append('Assistant')
+            elif person_type == 'assistant':
+                columns.append('Attorney')
+            else:  # global
+                columns.extend(['Attorney', 'Assistant'])
+            
+            current_row = write_table("ACTIVE CASES", active_cases, columns, current_row)
+        
+        # 2. Settled Cases
+        if settled_cases.exists():
+            columns = ['Case Name', 'Status', 'Days Active', 'Settlement Date']
+            if person_type == 'attorney':
+                columns.append('Assistant')
+            elif person_type == 'assistant':
+                columns.append('Attorney')
+            else:  # global
+                columns.extend(['Attorney', 'Assistant'])
+            
+            current_row = write_table("SETTLED CASES", settled_cases, columns, current_row)
+        
+        # 3. Dismissed Cases
+        if dismissed_cases.exists():
+            columns = ['Case Name', 'Status', 'Comments']
+            current_row = write_table("DISMISSED CASES", dismissed_cases, columns, current_row)
+        
+        # 4. Dropped and Subbed Cases
+        if dropped_subbed.exists():
+            columns = ['Case Name', 'Status', 'Comments']
+            current_row = write_table("DROPPED AND SUB OUT CASES", dropped_subbed, columns, current_row)
+        
+        # Adjust column widths
+        for column in ws.columns:
+            max_length = 0
+            column_letter = get_column_letter(column[0].column)
+            for cell in column:
+                try:
+                    if cell.value and len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            # Set different widths based on column type
+            if column[0].value == 'Comments':
+                adjusted_width = min(max_length + 5, 60)
+            elif column[0].value == 'Case Name':
+                adjusted_width = min(max_length + 5, 50)
+            else:
+                adjusted_width = min(max_length + 3, 20)
+            ws.column_dimensions[column_letter].width = adjusted_width
+        
+        # Create response
+        filename = f"{title.replace(' ', '_')}.xlsx"
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        wb.save(response)
+        
+        return response
+
 
 class CaseHistory(View):
 

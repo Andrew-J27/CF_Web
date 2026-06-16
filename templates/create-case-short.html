@@ -101,8 +101,8 @@
                 </div>
                 {% endfor %} 
             </div>
-        
         </div>
+
         <div class="tab-pane" data-tab="2">
 
             <h2> Staff handling: </h2>
@@ -118,7 +118,6 @@
             </div>
 
             <h2> Case Information </h2>
-
             <div class="form-field">
                 {{ case_form.status.label_tag }}
                 {{ case_form.status }}
@@ -151,9 +150,8 @@
                 {{ case_form.settlement_date.errors }}
             </div>
             <span></span>
-
-            
         </div>
+
         <div class="tab-pane" data-tab="3" id="injury-pane">
 
             <h2> 
@@ -191,6 +189,7 @@
                 {% endfor %} 
             </div>
         </div>
+
         <div class="tab-pane" data-tab="4" id="employer-pane">
             <h2> Client's Employer Information</h2>
             <div class="form-field">
@@ -204,6 +203,7 @@
                 {{ employer_form.address.errors }}
             </div>
         </div>
+        
         <div class="tab-pane" data-tab="5" id="insurance-pane">
 
             <h2> Employer's Insurance Carrier Information </h2>

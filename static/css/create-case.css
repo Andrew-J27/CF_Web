@@ -180,3 +180,7 @@ div.row {
     grid-template-rows: subgrid;
     grid-row: 1/-1;
 }
+
+label.disabled {
+    color: #888;    
+}

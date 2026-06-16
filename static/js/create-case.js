@@ -1,21 +1,49 @@
 // Tom Select initialization
 
 const choices = [
-    document.getElementById('tom-select-client'),
-    document.getElementById('tom-select-employer'),
-    document.getElementById('tom-select-insurance-carrier'),
-    document.getElementById('tom-select-claim-administrator'),
-    document.getElementById('tom-select-claim-adjuster'),
-    document.getElementById('tom-select-defense_law_firm'),
-    document.getElementById('tom-select-defense_attorney'),
-    document.getElementById('tom-select-defense_assistant')
+    'client',
+    'employer',
+    'insurance-carrier',
+    'claim-administrator',
+    'claim-adjuster',
+    'defense_law_firm', 
+    'defense_attorney',
+    'defense_assistant', 
 ]
 
-choices.forEach(widget => { 
+choices.forEach(tag => { 
+
+    const widget = document.getElementById('tom-select-'+tag);
+    const create_fields = document.querySelectorAll('.'+tag+'-field');
+
     if (widget) {
-        new TomSelect(widget, {
-            create: true, 
+
+        const tomSelect = new TomSelect(widget, {
+            create: true,  // Permitir crear nuev   as opciones
+            maxItems: 1,   // Solo una opción seleccionable
+
+            createFilter: (input) => {
+                // El input es el texto que escribe el usuario
+                return input.trim().length > 0;
+            },
+            onItemAdd: (value, item) => {
+                console.log(create_fields);
+                // DETECTAR si es NUEVO (string) o EXISTENTE (numérico)
+                const esNuevo = isNaN(parseInt(value));
+                
+                if (esNuevo) {
+                    create_fields.forEach(field => {
+                        field.disabled = false;
+                        field.parentElement.querySelector('label').classList.remove('disabled');
+                    })
+                } else {
+                    create_fields.forEach(field => {
+                        field.disabled = true;
+                        field.value = '';
+                        field.parentElement.querySelector('label').classList.add('disabled');
+                    })
+                }
+            }
         }); 
     }
-})
- 
+});

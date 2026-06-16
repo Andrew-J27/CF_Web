@@ -23,23 +23,40 @@ class AssistantForm(forms.ModelForm):
 class EmployerForm(forms.ModelForm):
     class Meta:
         model = Employer
+        fields = ['address']
         exclude = ['active']
+
+        widgets = {
+            'address': forms.TextInput(attrs={'class': 'form-field employer-field'}),    
+        }
 
 class InsuranceCarrierForm(forms.ModelForm):
     class Meta:
         model = InsuranceCarrier
         exclude = ['active']
 
+        widgets = {
+            'address': forms.TextInput(attrs={'class': 'form-field insurance-carrier-form-field'}),    
+        }
+
 
 class ClaimAdministratorForm(forms.ModelForm):
     class Meta:
         model = ClaimAdministrator
         exclude = ['active'] 
+
+        widgets = {
+            'address': forms.TextInput(attrs={'class': 'form-field claim-administrator-form-field'}),    
+        }
         
 class DefenseLawFirmForm(forms.ModelForm):
     class Meta:
         model = DefenseLawFirm
         exclude = ['active']
+
+        widgets = {
+            'address': forms.TextInput(attrs={'class': 'form-field defense_law_firm-form-field'}),    
+        }
  
 # Client
 class ClientForm(forms.ModelForm):
@@ -49,9 +66,9 @@ class ClientForm(forms.ModelForm):
         
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-field'}),
-            'address': forms.TextInput(attrs={'class': 'form-field'}),
-            'ssn': forms.TextInput(attrs={'class': 'form-field'}),
-            'birth': forms.DateInput(attrs={'class': 'form-field', 'type': 'date'}),
+            'address': forms.TextInput(attrs={'class': 'form-field client-form-field'}),    
+            'ssn': forms.TextInput(attrs={'class': 'form-field client-form-field'}),
+            'birth': forms.DateInput(attrs={'class': 'form-field client-form-field', 'type': 'date'}),
         }
 
         labels = {
@@ -228,6 +245,8 @@ class CaseForm(forms.ModelForm):
             'attorney': 'Attorney Handling',
             'assistant':'Assistant Handling'
         }
+
+        
 
 class AdjudicationForm(forms.ModelForm):
     class Meta:
@@ -612,6 +631,8 @@ class BaseChoiceForm(forms.ModelForm):
                     'placeholder': f'Search or create {self.model_class._meta.verbose_name}...'
                 })
             )
+
+        self.fields[self.choice_field_name].label = "Name"
         
         # Configurar el widget con ID y clase
         widget_attrs = {}
@@ -748,7 +769,7 @@ class EmployerChoiceForm(BaseChoiceForm):
     class Meta:
         model = Employer
         fields = ['name', 'address']
-        widgets = {'name': forms.HiddenInput(), 'address': forms.TextInput()}
+        widgets = {'name': forms.HiddenInput(), 'address': forms.TextInput(attrs={'class':'employer-field'})}
 
 class InsuranceCarrierChoiceForm(BaseChoiceForm):
     insurance_carrier_choice = forms.ChoiceField(required=False, choices=[])
@@ -761,7 +782,7 @@ class InsuranceCarrierChoiceForm(BaseChoiceForm):
     class Meta:
         model = InsuranceCarrier
         fields = ['name', 'address']
-        widgets = {'name': forms.HiddenInput(), 'address': forms.TextInput()}
+        widgets = {'name': forms.HiddenInput(), 'address': forms.TextInput(attrs={'class':'insurance-carrier-field'})}
 
 class ClaimAdministratorChoiceForm(BaseChoiceForm):
     claim_administrator_choice = forms.ChoiceField(required=False, choices=[]) 
@@ -773,7 +794,7 @@ class ClaimAdministratorChoiceForm(BaseChoiceForm):
     class Meta:
         model = ClaimAdministrator
         fields = ['name', 'address']
-        widgets = {'name': forms.HiddenInput(), 'address': forms.TextInput()}
+        widgets = {'name': forms.HiddenInput(), 'address': forms.TextInput(attrs={'class':'claim-administratro-field'})}
 
 class ClaimAdjusterChoiceForm(BaseChoiceForm):
     claim_adjuster_choice = forms.ChoiceField(required=False, choices=[]) 
@@ -797,7 +818,7 @@ class DefenseLawFirmChoiceForm(BaseChoiceForm):
     class Meta:
         model = DefenseLawFirm
         fields = ['name', 'address']
-        widgets = {'name': forms.HiddenInput(), 'address': forms.TextInput()}
+        widgets = {'name': forms.HiddenInput(), 'address': forms.TextInput(attrs={'class':'defense_law_firm-field'})}
 
 
 class DefenseAttorneyChoiceForm(BaseChoiceForm):

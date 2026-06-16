@@ -98,3 +98,18 @@ submit_btn.addEventListener('click', function() {
     form.submit();
 });
  
+
+const errors = document.querySelectorAll('.errorlist li');
+
+const firstErrorFound = false;
+
+errors.forEach(error => {
+    if (error.textContent.trim() != '') {
+        let tabNum = error.closest('.tab-pane').dataset.tab;
+
+        if (!firstErrorFound) {
+            activateTab(tabNum);
+            firstErrorFound = true;
+        }
+    }
+})

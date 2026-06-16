@@ -13,6 +13,7 @@
 
     <form class="dates search" method="GET" action="{% url 'report' %}">
         <h2 class="model-name">Cases Report</h2> 
+        <a href="{% url "global-reports" %}" class="btn btn-global-reports"> Global reports</a>
         <span class="spacer"></span>
         
         <label> Start Date:
@@ -23,29 +24,7 @@
             <input type="date" name="end_date" value="{{ end_date|default:'' }}">
         </label>
         
-        {% comment "" %}
-        <label> Attorney:
-            <select name="attorney">
-                <option value="">All Attorneys</option>
-                {% for attorney in attorneys %}
-                <option value="{{ attorney.id }}" {% if selected_attorney == attorney.id|stringformat:"s" %}selected{% endif %}>
-                    {{ attorney.name }}
-                </option>
-                {% endfor %}
-            </select>
-        </label>
-        
-        <label> Status:
-            <select name="status">
-                <option value="">All Statuses</option>
-                {% for case_status in case_statuses %}
-                <option value="{{ case_status.id }}" {% if selected_status == case_status.id|stringformat:"s" %}selected{% endif %}>
-                    {{ case_status.name }}
-                </option>
-                {% endfor %}
-            </select>
-        </label>
-        {% endcomment %}
+         
         
         <button type="submit">
             <i class="fi fi-br-search"></i> Filter
@@ -65,8 +44,8 @@
                     <th>Attorney</th>
                     <th>Assistant</th>
                     <th>Case Status</th>
-                    <th>Details Registered</th>
                     <th>ADJ Filed</th>
+                    <th>Details Registered</th>
                     <th>Dropped / Sub'd Out</th>
                     <th>Settled</th>
                     <th>Source</th>
@@ -85,7 +64,7 @@
                         </span>
                     </td>
                     <td class="checkbox-cell">
-                        {% if item.claim_num %}
+                        {% if item.def_lawfirm and item.def_attorney and item.claim_admin %}
                         <i class="fi fi-sr-check-circle checked"></i>
                         {% else %}
                         <i class="fi fi-sr-circle unchecked"></i>
@@ -99,14 +78,14 @@
                         {% endif %}
                     </td>
                     <td class="checkbox-cell">
-                        {% if not item.active %}
+                        {% if item.status.name == 'Dropped' %}
                         <i class="fi fi-sr-check-circle checked"></i>
                         {% else %}
                         <i class="fi fi-sr-circle unchecked"></i>
                         {% endif %}
                     </td>
                     <td class="checkbox-cell">
-                        {% if item.settlement_date %}
+                        {% if item.status.name == 'Settled' %}
                         <i class="fi fi-sr-check-circle checked"></i>
                         {% else %}
                         <i class="fi fi-sr-circle unchecked"></i>

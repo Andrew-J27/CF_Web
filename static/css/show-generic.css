@@ -39,9 +39,14 @@ form.search {
 
 .search input,
 .search button, 
-.search select {
+.search select { 
     font-size: inherit;
     padding: 5px 8px
+}
+
+.search button {
+    display: flex;
+    gap: 5px;
 }
 
 .show {

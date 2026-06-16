@@ -82,6 +82,9 @@
     {% endif %}
 </td>
 <td>
+
+    {% if not item.status.terminal %}
+    
     {% if not item.adj_date and item.active %}
         <a href="{% url "set-adjudication" item.id %}" class="btn-set-adj"> 
             Set ADJ
@@ -101,6 +104,8 @@
     <button class='btn-restore' data-id="{{item.id}}">
         <i class="fi fi-sr-inbox-out"></i>
     </button>
+    {% endif %}
+    
     {% endif %}
 </td>
 {% endblock attributes %}

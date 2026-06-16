@@ -1,0 +1,23 @@
+.card.global-report {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.2rem;
+}
+
+.global-report button {
+    font-size: inherit;
+    border: none;
+    padding: 10px;
+    display: flex;
+    background-color: green;
+    color: white;
+    gap: 10px;
+    border-radius: 5px;
+}
+
+div.show-container {
+    display: flex;
+    flex-direction: column;
+    width: 30%;
+    margin: 1% auto;
+}
