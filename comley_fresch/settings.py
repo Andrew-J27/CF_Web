@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-75a(ftqk+lbb#s%x)f4)$ox#f48m1id5)j_vz+%debz4(q6+2-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '54.209.192.116']
+ALLOWED_HOSTS = ['localhost', '54.209.192.116', '127.0.0.1']
 
 
 # Application definition
@@ -71,7 +71,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'comley_fresch.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
@@ -89,12 +88,15 @@ DATABASES = {
         },
     }
 }
+
 '''
-'default': {
-    'ENGINE': 'django.db.backends.sqlite3',
-    'NAME': BASE_DIR / 'db.sqlite3',
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
-'''
+''' 
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

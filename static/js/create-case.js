@@ -19,7 +19,7 @@ choices.forEach(tag => {
     if (widget) {
 
         const tomSelect = new TomSelect(widget, {
-            create: true,  // Permitir crear nuev   as opciones
+            create: true,  // Permitir crear nuevas opciones
             maxItems: 1,   // Solo una opción seleccionable
 
             createFilter: (input) => {

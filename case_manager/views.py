@@ -261,7 +261,7 @@ def CaseContext(request, form_class=CaseForm(), return_query=True):
     # Base queryset
     queryset = Case.objects.filter(
         Q(client__name__icontains=search) | Q(employer__name__icontains=search)
-    )
+    ).order_by('-updated_at')
     
     # Aplicar filtros
     if assistant_id:
